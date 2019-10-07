@@ -9,12 +9,12 @@ using namespace std;
 
 class Planner {
     public:
+        Planner(Node start, Node end, vector<vector<int>>& occ);
+        bool find_path();
 
-    private:
-        Planner(Node start, Node end, vector<vector<int>> occ);
-        void find_path(); 
-        vector<Node> vertices;
-        vector<Edge> edges;
+    private: 
+        Node start;
+        Node end;
         vector<vector<int>> occ_grid;
 };
 
