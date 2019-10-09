@@ -25,6 +25,14 @@ void Node::set_h(float val) {
     h = val; 
 }
 
+Node* Node::get_parent() {
+    return parent; 
+}
+
+void Node::set_parent(Node &parent_node) {
+    this->parent = &parent_node; 
+}
+
 bool Node::operator==(const Node& rhs)
 {
     return (this->get_x() == rhs.get_x()) && (this->get_y() == rhs.get_y());

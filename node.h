@@ -12,6 +12,8 @@ class Node {
         void set_h(float val);
         bool operator==(const Node& rhs);
         bool operator!=(const Node& rhs);
+        Node* get_parent();
+        void set_parent(Node& parent_node);
         // bool operator<(const Node& rhs);
 
     private:
@@ -19,6 +21,7 @@ class Node {
         int y;
         int g;
         float h;
+        Node* parent;
 };
 
 #endif

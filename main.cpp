@@ -8,7 +8,7 @@ using namespace std;
 
 int main() {
     int occ_size = 5;
-    Node start(0, 0, 0, 0);
+    Node start(1, 1, 0, 0);
     Node end(4, 4, 0, 0);
 
     vector<vector<int>> occ(occ_size); 
@@ -17,6 +17,7 @@ int main() {
     for (int col = 0; col < occ_size; col++) {
         occ.at(col) = curr_row;
     }
+    // cout << "HERE";
 
     Planner planner(start, end, occ);
     planner.find_path();
