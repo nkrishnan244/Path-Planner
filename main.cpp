@@ -1,14 +1,15 @@
 #include <iostream>
 #include "planner.h"
 #include "node.h"
-#include "node.cpp" 
-#include "planner.cpp"
+// #include "matplotlibcpp.h"
+// #include "node.cpp" 
+// #include "planner.cpp"
 
 using namespace std;
 
 int main() {
     int occ_size = 5;
-    Node start(1, 1, 0, 0);
+    Node start(0, 0, 0, 0);
     Node end(4, 4, 0, 0);
 
     vector<vector<int>> occ(occ_size); 

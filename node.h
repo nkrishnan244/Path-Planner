@@ -4,24 +4,24 @@
 class Node {
     
     public:
-        Node(int x_pos, int y_pos, int prev_g, float h_val);
-        int get_x() const;
-        int get_y() const;
+        Node(int row, int col, int prev_g, float h_val);
+        int get_row() const;
+        int get_col() const;
         int get_g() const;
         float get_h() const; 
         void set_h(float val);
         bool operator==(const Node& rhs);
         bool operator!=(const Node& rhs);
         Node* get_parent();
-        void set_parent(Node& parent_node);
+        void set_parent(Node &parent_node);
+        Node* parent;
         // bool operator<(const Node& rhs);
 
     private:
-        int x;
-        int y;
+        int row;
+        int col;
         int g;
         float h;
-        Node* parent;
 };
 
 #endif

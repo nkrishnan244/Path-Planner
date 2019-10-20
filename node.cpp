@@ -1,16 +1,16 @@
 #include "node.h"
 
-Node::Node(int x_pos, int y_pos, int prev_g, float h_val) 
-: x(x_pos), y(y_pos), g(prev_g + 1), h(h_val)
+Node::Node(int row_, int col_, int prev_g, float h_val) 
+: row(row_), col(col_), g(prev_g + 1), h(h_val)
 {
 }
 
-int Node::get_x() const {
-    return x;
+int Node::get_row() const {
+    return row;
 }
 
-int Node::get_y() const {
-    return y;
+int Node::get_col() const {
+    return col;
 }
 
 int Node::get_g() const {
@@ -35,7 +35,7 @@ void Node::set_parent(Node &parent_node) {
 
 bool Node::operator==(const Node& rhs)
 {
-    return (this->get_x() == rhs.get_x()) && (this->get_y() == rhs.get_y());
+    return (this->get_row() == rhs.get_row()) && (this->get_col() == rhs.get_col());
 }
 
 bool Node::operator!=(const Node& rhs)
