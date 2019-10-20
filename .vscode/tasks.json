@@ -5,14 +5,14 @@
             "label": "debug",
             "type": "shell",
             "command": "",
-            "args": ["g++","-std=c++11", "${relativeFile}", "-o","a.exe"]
+            "args": ["g++","-std=c++11", "./main.out", "-g"]
         },
         {
             "label": "g++ build active file",
             "type": "shell",
             "command": "",
             "args": [
-                "g++","-std=c++11", "main.cpp", "planner.cpp", "node.cpp", "-g", "-o","${fileBasenameNoExtension}.out", "&&", "clear"
+                "g++","-std=c++11", "main.cpp", "node.cpp", "planner.cpp", "dijkstra.cpp", "-I", "/usr/include/python2.7", "-I", "../matplotlib-cpp", "-I", "/usr/local/lib/python2.7/dist-packages/numpy/core/include/", "-l", "python2.7", "-g", "-o", "main.out"
             ],
             "group": {
                 "kind": "build",
@@ -36,7 +36,7 @@
             "type": "shell",
             "command": "",
             "args": [
-                "g++","-std=c++11", "main.cpp", "planner.cpp", "node.cpp", "-I", "/usr/include/python2.7", "-I", "../matplotlib-cpp", "-I", "/usr/local/lib/python2.7/dist-packages/numpy/core/include/", "-l", "python2.7", "-o", "${fileBasenameNoExtension}.out", "&&", "clear" , "&&" , "./${fileBasenameNoExtension}.out", "-g"
+                "g++","-std=c++11", "main.cpp", "node.cpp", "planner.cpp", "dijkstra.cpp", "astar.cpp", "-I", "/usr/include/python2.7", "-I", "../matplotlib-cpp", "-I", "/usr/local/lib/python2.7/dist-packages/numpy/core/include/", "-l", "python2.7", "-o", "main.out", "&&", "clear" , "&&" , "./main.out", "-g"
             ],
             "group": {
                 "kind": "build",

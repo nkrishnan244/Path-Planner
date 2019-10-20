@@ -1,7 +1,17 @@
 #include "node.h"
 
-Node::Node(int row_, int col_, int prev_g, float h_val) 
-: row(row_), col(col_), g(prev_g + 1), h(h_val)
+Node::Node()
+{
+    
+}
+
+Node::Node(int row_, int col_, int g_val) 
+: row(row_), col(col_), g(g_val)
+{
+}
+
+Node::Node(int row_, int col_, int g_val, float h_val) 
+: row(row_), col(col_), g(g_val), h(h_val)
 {
 }
 
@@ -33,16 +43,17 @@ void Node::set_parent(Node &parent_node) {
     this->parent = &parent_node; 
 }
 
-bool Node::operator==(const Node& rhs)
+bool Node::operator==(const Node& rhs) const
 {
     return (this->get_row() == rhs.get_row()) && (this->get_col() == rhs.get_col());
 }
 
-bool Node::operator!=(const Node& rhs)
+bool Node::operator!=(const Node& rhs) const
 {
     return !(*this == rhs);
 }
 
-// bool Node::operator<(const Node& rhs) { 
-//   return this->get_h() > rhs.get_h();
-// }
+bool Node::operator<(const Node& rhs) const
+{ 
+  return this->val > rhs.val;
+}

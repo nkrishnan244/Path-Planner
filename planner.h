@@ -3,21 +3,19 @@
 
 #include <vector>
 #include "node.h"
-#include "edge.h"
-#include <queue> 
 
 using namespace std;
 
 class Planner {
     public:
-        Planner(Node start, Node end, vector<vector<int>>& occ);
-        bool find_path();
+        Planner(); 
+        Planner(Node start_node, Node end_node, vector<vector<int>> &occ);
+        virtual bool find_path() = 0;
 
-    private: 
+    // private: 
         Node start;
         Node end;
         vector<vector<int>> occ_grid;
-        void add_node(int row, int col, priority_queue<Node> &pq, Node* parent_node_ptr);
 };
 
 #endif

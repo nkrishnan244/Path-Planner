@@ -1,16 +1,17 @@
 #include <iostream>
-#include "planner.h"
+#include "dijkstra.h"
+#include "astar.h"
 #include "node.h"
-// #include "matplotlibcpp.h"
+
 // #include "node.cpp" 
 // #include "planner.cpp"
 
 using namespace std;
 
 int main() {
-    int occ_size = 5;
+    int occ_size = 32;
     Node start(0, 0, 0, 0);
-    Node end(4, 4, 0, 0);
+    Node end(occ_size - 1, occ_size - 1, 0, 0);
 
     vector<vector<int>> occ(occ_size); 
 
@@ -20,9 +21,12 @@ int main() {
     }
     // cout << "HERE";
 
-    Planner planner(start, end, occ);
-    planner.find_path();
+    Astar astar(start, end, occ);
+    astar.find_path();
 
-    cout << "Hello World";
+    Dijkstra dijkstra(start, end, occ);
+    dijkstra.find_path();
+
+    cout << "Finished planning!";
     return 0;
 }
