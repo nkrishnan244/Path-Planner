@@ -2,6 +2,8 @@
 #include "dijkstra.h"
 #include "astar.h"
 #include "node.h"
+#include "occupancy_grid.h"
+#include "plotter.h"
 
 // #include "node.cpp" 
 // #include "planner.cpp"
@@ -9,23 +11,24 @@
 using namespace std;
 
 int main() {
-    int occ_size = 32;
+    int occ_size = 128;
     Node start(0, 0, 0, 0);
     Node end(occ_size - 1, occ_size - 1, 0, 0);
 
-    vector<vector<int>> occ(occ_size); 
+    // vector<vector<int>> occ; 
 
-    vector<int> curr_row(occ_size, 0);
-    for (int col = 0; col < occ_size; col++) {
-        occ.at(col) = curr_row;
-    }
-    // cout << "HERE";
+    OccupancyGrid occ(occ_size, occ_size, 0);
+    occ.add_rectangle_obs(64, 64, 30, 30);   
+
+
+    // Plotter plotter;
+    // plotter.plot_occupancy_grid(occ);
 
     Astar astar(start, end, occ);
     astar.find_path();
 
-    Dijkstra dijkstra(start, end, occ);
-    dijkstra.find_path();
+    // Dijkstra dijkstra(start, end, occ);
+    // dijkstra.find_path();
 
     cout << "Finished planning!";
     return 0;

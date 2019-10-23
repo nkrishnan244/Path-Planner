@@ -3,13 +3,13 @@
 // #include "node.h"
 // #include "node.cpp" // Need to get rid of this
 #include <math.h>
-#include "matplotlibcpp.h"
+// #include "matplotlibcpp.h"
 #include <unordered_set>
 
 using namespace std;
-namespace plt = matplotlibcpp;
+// namespace plt = matplotlibcpp;
 
-Dijkstra::Dijkstra(Node start_node, Node end_node, vector<vector<int>> &occ) 
+Dijkstra::Dijkstra(Node start_node, Node end_node, OccupancyGrid &occ) 
 // : start(start_node), end(end_node), occ_grid(occ)
 : Planner(start_node, end_node, occ)
 {
@@ -17,7 +17,7 @@ Dijkstra::Dijkstra(Node start_node, Node end_node, vector<vector<int>> &occ)
 }
 
 void Dijkstra::add_node_to_queue(int row, int col, priority_queue<Node> &pq, Node* parent_node_ptr) {
-    if (occ_grid[row][col] == 0) {
+    if (occ_grid.grid[row][col] == 0) {
         // float h = calculate_heuristic(row, col, end); 
         int g = parent_node_ptr->get_g() + 1;
         Node* new_node_ptr = new Node(row, col, g);
@@ -57,7 +57,7 @@ bool Dijkstra::find_path() {
         int curr_col = curr_node_ptr->get_col();
 
         // Check down
-        if (curr_row < occ_grid.size() - 1) {
+        if (curr_row < occ_grid.grid.size() - 1) {
             add_node_to_queue(curr_row + 1, curr_col, pqueue, curr_node_ptr);
         }
 
@@ -67,13 +67,33 @@ bool Dijkstra::find_path() {
         }
 
         // Check right
-        if (curr_col < occ_grid.size() - 1) {
+        if (curr_col < occ_grid.grid.size() - 1) {
             add_node_to_queue(curr_row, curr_col + 1, pqueue, curr_node_ptr);
         }
 
         // Check left
         if (curr_col > 0) {
             add_node_to_queue(curr_row, curr_col - 1, pqueue, curr_node_ptr);
+        }
+
+        // Up right
+        if (curr_row > 0 && curr_col < occ_grid.grid.size() - 1) {
+            add_node_to_queue(curr_row - 1, curr_col + 1, pqueue, curr_node_ptr);
+        }
+
+        // Up left
+        if (curr_row > 0 && curr_col > 0) {
+            add_node_to_queue(curr_row - 1, curr_col - 1, pqueue, curr_node_ptr);
+        }
+
+        // Bottom Right
+        if (curr_row < occ_grid.grid.size() - 1 && curr_col < occ_grid.grid.size() - 1) {
+            add_node_to_queue(curr_row + 1, curr_col + 1, pqueue, curr_node_ptr);
+        }
+
+        // Bottom Left
+        if (curr_row < occ_grid.grid.size() - 1 && curr_col > 0) {
+            add_node_to_queue(curr_row + 1, curr_col - 1, pqueue, curr_node_ptr);
         }
 
         Node next_node = pqueue.top();
@@ -107,8 +127,11 @@ bool Dijkstra::find_path() {
             final_rows.push_back(curr_node_ptr->get_row());
             final_cols.push_back(curr_node_ptr->get_col());
     }
-    plt::plot(final_rows, final_cols);
-    plt::show();
+    Plotter plotter;
+    // plotter.plot_path(final_rows, final_cols);
+    plotter.plot_path_in_grid(occ_grid, final_rows, final_cols);
+    // plt::plot(final_rows, final_cols);
+    // plt::show();
 
     cout << "Curr node row is : " << curr_node_ptr->get_row() << " Curr node col is : " << curr_node_ptr->get_col() << "\n"; 
     return true; 

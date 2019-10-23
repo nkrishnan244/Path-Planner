@@ -12,7 +12,7 @@
             "type": "shell",
             "command": "",
             "args": [
-                "g++","-std=c++11", "main.cpp", "node.cpp", "planner.cpp", "dijkstra.cpp", "-I", "/usr/include/python2.7", "-I", "../matplotlib-cpp", "-I", "/usr/local/lib/python2.7/dist-packages/numpy/core/include/", "-l", "python2.7", "-g", "-o", "main.out"
+                "g++","-std=c++11", "main.cpp", "occupancy_grid.cpp", "plotter.cpp", "node.cpp", "planner.cpp", "dijkstra.cpp", "astar.cpp", "-I", "/usr/include/python2.7", "-I", "/usr/local/lib/python2.7/dist-packages/numpy/core/include/", "-l", "python2.7", "-g", "-o", "main.out"
             ],
             "group": {
                 "kind": "build",
@@ -36,7 +36,7 @@
             "type": "shell",
             "command": "",
             "args": [
-                "g++","-std=c++11", "main.cpp", "node.cpp", "planner.cpp", "dijkstra.cpp", "astar.cpp", "-I", "/usr/include/python2.7", "-I", "../matplotlib-cpp", "-I", "/usr/local/lib/python2.7/dist-packages/numpy/core/include/", "-l", "python2.7", "-o", "main.out", "&&", "clear" , "&&" , "./main.out", "-g"
+                "g++","-std=c++11", "main.cpp", "occupancy_grid.cpp", "plotter.cpp", "node.cpp", "planner.cpp", "dijkstra.cpp", "astar.cpp", "-I", "/usr/include/python2.7", "-I", "/usr/local/lib/python2.7/dist-packages/numpy/core/include/", "-l", "python2.7", "-o", "main.out", "&&", "clear" , "&&" , "./main.out", "-g"
             ],
             "group": {
                 "kind": "build",

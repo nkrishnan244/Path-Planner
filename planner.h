@@ -3,19 +3,21 @@
 
 #include <vector>
 #include "node.h"
+#include "occupancy_grid.h"
+// #include "matplotlibcpp.h"
 
 using namespace std;
 
 class Planner {
     public:
         Planner(); 
-        Planner(Node start_node, Node end_node, vector<vector<int>> &occ);
+        Planner(Node start_node, Node end_node, OccupancyGrid &occ);
         virtual bool find_path() = 0;
 
     // private: 
         Node start;
         Node end;
-        vector<vector<int>> occ_grid;
+        OccupancyGrid occ_grid;
 };
 
 #endif

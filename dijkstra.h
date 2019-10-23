@@ -2,17 +2,18 @@
 #define DIJKSTRA_H
 
 #include <vector>
-#include "node.h"
+#include "occupancy_grid.h"
 #include "edge.h"
 #include <queue> 
 #include "planner.h"
 #include <unordered_set>
+#include "plotter.h"
 
-using namespace std;
+// using namespace std;
 
 class Dijkstra : public Planner {
     public:
-        Dijkstra(Node start_node, Node end_node, vector<vector<int>> &occ);
+        Dijkstra(Node start_node, Node end_node, OccupancyGrid &occ);
         virtual bool find_path(); 
 
     // private: 
