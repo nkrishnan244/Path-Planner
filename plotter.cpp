@@ -31,7 +31,7 @@ bool Plotter::plot_occupancy_grid(OccupancyGrid &occ_grid) {
 
     const float* zptr = &(z[0]);
     const int colors = 1;
-    plt::title("My matrix");
+    plt::title("A*");
     plt::imshow(zptr, nrows, ncols, colors);
     plt::show();
 
