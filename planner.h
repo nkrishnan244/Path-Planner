@@ -10,11 +10,11 @@ using namespace std;
 
 class Planner {
     public:
-        Planner(); 
+        Planner();
         Planner(Node start_node, Node end_node, OccupancyGrid &occ);
-        virtual bool find_path() = 0;
+        virtual vector<vector<int>> find_path() = 0;
 
-    // private: 
+    // private:
         Node start;
         Node end;
         OccupancyGrid occ_grid;

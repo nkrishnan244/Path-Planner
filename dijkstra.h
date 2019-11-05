@@ -3,8 +3,7 @@
 
 #include <vector>
 #include "occupancy_grid.h"
-#include "edge.h"
-#include <queue> 
+#include <queue>
 #include "planner.h"
 #include <unordered_set>
 #include "plotter.h"
@@ -13,10 +12,11 @@
 
 class Dijkstra : public Planner {
     public:
+        virtual ~Dijkstra() {}
         Dijkstra(Node start_node, Node end_node, OccupancyGrid &occ);
-        virtual bool find_path(); 
+        virtual vector<vector<int>> find_path();
 
-    // private: 
+    // private:
         // Node start;
         // Node end;
         // vector<vector<int>> occ_grid;

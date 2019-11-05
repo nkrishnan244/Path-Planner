@@ -2,15 +2,15 @@
 
 Node::Node()
 {
-    
+
 }
 
-Node::Node(int row_, int col_, int g_val) 
+Node::Node(int row_, int col_, int g_val)
 : row(row_), col(col_), g(g_val)
 {
 }
 
-Node::Node(int row_, int col_, int g_val, float h_val) 
+Node::Node(int row_, int col_, int g_val, float h_val)
 : row(row_), col(col_), g(g_val), h(h_val)
 {
 }
@@ -32,15 +32,15 @@ float Node::get_h() const {
 }
 
 void Node::set_h(float val) {
-    h = val; 
+    h = val;
 }
 
 Node* Node::get_parent() {
-    return parent; 
+    return parent;
 }
 
 void Node::set_parent(Node &parent_node) {
-    this->parent = &parent_node; 
+    this->parent = &parent_node;
 }
 
 bool Node::operator==(const Node& rhs) const
@@ -54,6 +54,6 @@ bool Node::operator!=(const Node& rhs) const
 }
 
 bool Node::operator<(const Node& rhs) const
-{ 
+{
   return this->val > rhs.val;
 }

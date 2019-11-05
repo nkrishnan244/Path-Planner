@@ -4,15 +4,15 @@
 // #include "dijkstra.cpp"
 
 class Node {
-    
+
     public:
-        Node(); 
+        Node();
         Node(int row_, int col_, int g_val);
         Node(int row_, int col_, int g_val, float h_val);
         int get_row() const;
         int get_col() const;
         int get_g() const;
-        float get_h() const; 
+        float get_h() const;
         void set_h(float val);
         bool operator==(const Node& rhs) const;
         bool operator!=(const Node& rhs) const;

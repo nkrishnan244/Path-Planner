@@ -2,7 +2,7 @@
 
 using namespace std;
 
-Astar::Astar(Node start_node, Node end_node, OccupancyGrid &occ) 
+Astar::Astar(Node start_node, Node end_node, OccupancyGrid &occ)
 : Dijkstra(start_node, end_node, occ)
 {
 }
@@ -17,15 +17,15 @@ float calculate_heuristic(float row, float col, Node end) {
 
 void Astar::add_node_to_queue(int row, int col, priority_queue<Node> &pq, Node* parent_node_ptr) {
     if (occ_grid.grid[row][col] == 0) {
-        float h = calculate_heuristic(row, col, end); 
+        float h = calculate_heuristic(row, col, end);
         int g = parent_node_ptr->get_g() + 1;
-        Node* new_node_ptr = new Node(row, col, g, h); 
+        Node* new_node_ptr = new Node(row, col, g, h);
         new_node_ptr->val = g + h;
         new_node_ptr->parent = parent_node_ptr;
         pq.push(*new_node_ptr);
     }
 }
 
-bool Astar::find_path() {
+vector<vector<int>> Astar::find_path() {
     return Dijkstra::find_path();
 }
