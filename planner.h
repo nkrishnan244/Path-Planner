@@ -11,13 +11,13 @@ using namespace std;
 class Planner {
     public:
         Planner();
-        Planner(Node start_node, Node end_node, OccupancyGrid &occ);
-        virtual vector<vector<int>> find_path() = 0;
+        Planner(Node startNode, Node endNode, OccupancyGrid &occ);
+        virtual vector<vector<int>> findPath() = 0;
 
     // private:
         Node start;
         Node end;
-        OccupancyGrid occ_grid;
+        OccupancyGrid occGrid;
 };
 
 #endif

@@ -13,8 +13,8 @@ Planner::Planner()
 
 }
 
-Planner::Planner(Node start_node, Node end_node, OccupancyGrid &occ)
-: start(start_node), end(end_node), occ_grid(occ)
+Planner::Planner(Node startNode, Node endNode, OccupancyGrid &occ)
+: start(startNode), end(endNode), occGrid(occ)
 {
 
 }

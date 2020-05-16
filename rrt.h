@@ -10,13 +10,17 @@
 class RRT : public Planner
 {
     public:
-        RRT(Node start_node, Node end_node, OccupancyGrid &occ);
+        RRT(Node startNode, Node endNode, OccupancyGrid &occ);
         virtual ~RRT() {}
-        virtual vector<vector<int>> find_path();
-        pair<int, int> get_random_coordinates();
-        Node* find_closest_node(int rand_row, int rand_col);
+        virtual vector<vector<int>> findPath();
+        pair<int, int> getRandomCoordinates();
+        Node findClosestNode(int randRow, int randCol);
+        bool checkObstacle(Node* startNode, Node* finalNode);
 
-        vector<Node> nodes;
+//        int rrt_dist;
+
+//        void set_rrt_dist(int val) {rrt_dist=val;}
+        vector<Node*> nodes;
 };
 
 #endif // RRT_H

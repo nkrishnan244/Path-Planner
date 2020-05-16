@@ -1,30 +1,24 @@
 #include <iostream>
 #include "dijkstra.h"
-// #include "node.h"
-// #include "node.cpp" // Need to get rid of this
 #include <math.h>
-// #include "matplotlibcpp.h"
 #include <unordered_set>
 #include "mainwindow.h"
 
 using namespace std;
-// namespace plt = matplotlibcpp;
 
-Dijkstra::Dijkstra(Node start_node, Node end_node, OccupancyGrid &occ)
-// : start(start_node), end(end_node), occ_grid(occ)
-: Planner(start_node, end_node, occ)
+Dijkstra::Dijkstra(Node startNode, Node endNode, OccupancyGrid &occ)
+: Planner(startNode, endNode, occ)
 {
 
 }
 
-void Dijkstra::add_node_to_queue(int row, int col, priority_queue<Node> &pq, Node* parent_node_ptr) {
-    if (occ_grid.grid[row][col] == 0) {
-        // float h = calculate_heuristic(row, col, end);
-        int g = parent_node_ptr->get_g() + 1;
-        Node* new_node_ptr = new Node(row, col, g);
-        new_node_ptr->val = g;
-        new_node_ptr->parent = parent_node_ptr;
-        pq.push(*new_node_ptr);
+void Dijkstra::addNodeToQueue(unsigned int row, unsigned int col, priority_queue<Node> &pq, Node* parentNodePtr) {
+    if (occGrid.grid.at(row).at(col) == 0) {
+        int g = parentNodePtr->get_g() + 1;
+        Node* newNodePtr = new Node(row, col, g);
+        newNodePtr->val = g;
+        newNodePtr->parent = parentNodePtr;
+        pq.push(*newNodePtr);
     }
 
 }
@@ -42,106 +36,79 @@ template<>
     };
 }
 
-// plt::plot({1,3,2,4});
-// plt::show();
-
-// Must implement
-vector<vector<int>> Dijkstra::find_path() {
-    unordered_set<Node> seen_nodes;
+vector<vector<int>> Dijkstra::findPath() {
+    unordered_set<Node> seenNodes;
     priority_queue<Node> pqueue;
-    // Node curr_node = start;
-    Node* curr_node_ptr = &start;
+    Node* currNodePtr = &start;
 
-    while (*curr_node_ptr != end) {
-        seen_nodes.insert(*curr_node_ptr);
-        int curr_row = curr_node_ptr->get_row();
-        int curr_col = curr_node_ptr->get_col();
+    while (*currNodePtr != end) {
+        seenNodes.insert(*currNodePtr);
+        int currRow = currNodePtr->get_row();
+        int currCol = currNodePtr->get_col();
 
         // Check down
-        if (curr_row < occ_grid.grid.size() - 1) {
-            add_node_to_queue(curr_row + 1, curr_col, pqueue, curr_node_ptr);
+        if (currRow < occGrid.grid.size() - 1) {
+            addNodeToQueue(currRow + 1, currCol, pqueue, currNodePtr);
         }
 
         // Check up
-        if (curr_row > 0) {
-            add_node_to_queue(curr_row - 1, curr_col, pqueue, curr_node_ptr);
+        if (currRow > 0) {
+            addNodeToQueue(currRow - 1, currCol, pqueue, currNodePtr);
         }
 
         // Check right
-        if (curr_col < occ_grid.grid.size() - 1) {
-            add_node_to_queue(curr_row, curr_col + 1, pqueue, curr_node_ptr);
+        if (currCol < occGrid.grid.size() - 1) {
+            addNodeToQueue(currRow, currCol + 1, pqueue, currNodePtr);
         }
 
         // Check left
-        if (curr_col > 0) {
-            add_node_to_queue(curr_row, curr_col - 1, pqueue, curr_node_ptr);
+        if (currCol > 0) {
+            addNodeToQueue(currRow, currCol - 1, pqueue, currNodePtr);
         }
 
         // Up right
-        if (curr_row > 0 && curr_col < occ_grid.grid.size() - 1) {
-            add_node_to_queue(curr_row - 1, curr_col + 1, pqueue, curr_node_ptr);
+        if (currRow > 0 && currCol < occGrid.grid.size() - 1) {
+            addNodeToQueue(currRow - 1, currCol + 1, pqueue, currNodePtr);
         }
 
         // Up left
-        if (curr_row > 0 && curr_col > 0) {
-            add_node_to_queue(curr_row - 1, curr_col - 1, pqueue, curr_node_ptr);
+        if (currRow > 0 && currCol > 0) {
+            addNodeToQueue(currRow - 1, currCol - 1, pqueue, currNodePtr);
         }
 
         // Bottom Right
-        if (curr_row < occ_grid.grid.size() - 1 && curr_col < occ_grid.grid.size() - 1) {
-            add_node_to_queue(curr_row + 1, curr_col + 1, pqueue, curr_node_ptr);
+        if (currRow < occGrid.grid.size() - 1 && currCol < occGrid.grid.size() - 1) {
+            addNodeToQueue(currRow + 1, currCol + 1, pqueue, currNodePtr);
         }
 
         // Bottom Left
-        if (curr_row < occ_grid.grid.size() - 1 && curr_col > 0) {
-            add_node_to_queue(curr_row + 1, curr_col - 1, pqueue, curr_node_ptr);
+        if (currRow < occGrid.grid.size() - 1 && currCol > 0) {
+            addNodeToQueue(currRow + 1, currCol - 1, pqueue, currNodePtr);
         }
 
-        Node next_node = pqueue.top();
+        Node nextNode = pqueue.top();
         pqueue.pop();
 
-        while (seen_nodes.find(next_node) != seen_nodes.end()) {
-
-            next_node = pqueue.top();
+        while (seenNodes.find(nextNode) != seenNodes.end()) {
+            nextNode = pqueue.top();
             pqueue.pop();
         }
 
-        curr_node_ptr = new Node(next_node.get_row(), next_node.get_col(), next_node.get_g(), next_node.get_h());
-        curr_node_ptr->parent = next_node.parent;
-
-        // cout << "--------------------------------------------------------------------------------------\n";
-        // cout << "Curr node Row is : " << curr_node_ptr->get_row() << " Curr node Col is : " << curr_node_ptr->get_col() << "\n";
-        // cout << "Parent node Row is : " << curr_node_ptr->get_parent()->get_row() << " Parent node Col is : " << curr_node_ptr->get_parent()->get_col() << "\n";
-    }
-    // while (curr_node.get_x() != 1 && curr_node.get_y() != 1) {
-
-    cout << "--------------------------------------------------------------------------------------\n";
-    // Node curr_node = *curr_node_ptr;
-
-    vector<int> final_rows;
-    vector<int> final_cols;
-
-    while (*curr_node_ptr != start) {
-            // Node* parent = curr_node_ptr->get_parent();
-            cout << "Curr node row is : " << curr_node_ptr->get_row() << " Curr node col is : " << curr_node_ptr->get_col() << "\n";
-            curr_node_ptr = curr_node_ptr->get_parent();
-            final_rows.push_back(curr_node_ptr->get_row());
-            final_cols.push_back(curr_node_ptr->get_col());
+        currNodePtr = new Node(nextNode.get_row(), nextNode.get_col(), nextNode.get_g(), nextNode.get_h());
+        currNodePtr->parent = nextNode.parent;
     }
 
-    vector<vector<int>> final_points;
-    final_points.push_back(final_rows);
-    final_points.push_back(final_cols);
+    vector<int> finalRows;
+    vector<int> finalCols;
 
-//    MainWindow plotter;
-//    plotter.make_plot(final_rows, final_cols);
-//    plotter.show();
-//    Plotter plotter;
-    // plotter.plot_path(final_rows, final_cols);
-//    plotter.plot_path_in_grid(occ_grid, final_rows, final_cols);
-    // plt::plot(final_rows, final_cols);
-    // plt::show();
+    finalRows.push_back(currNodePtr->get_row());
+    finalCols.push_back(currNodePtr->get_col());
 
-    cout << "Curr node row is : " << curr_node_ptr->get_row() << " Curr node col is : " << curr_node_ptr->get_col() << "\n";
-    return final_points;
+    while (*currNodePtr != start) {
+        currNodePtr = currNodePtr->get_parent();
+        finalRows.push_back(currNodePtr->get_row());
+        finalCols.push_back(currNodePtr->get_col());
+    }
+
+    return {finalRows, finalCols};
 }

@@ -23,6 +23,8 @@ SOURCES += \
     node.cpp \
     occupancy_grid.cpp \
     planner.cpp \
+#    plotgrid.cpp \
+#    probabilisticroadmap.cpp \
     qcustomplot.cpp \
 #    rrt.cpp
  \#    plotter.cpp
@@ -36,6 +38,8 @@ HEADERS += \
     node.h \
     occupancy_grid.h \
     planner.h \
+#    plotgrid.h \
+#    probabilisticroadmap.h \
     qcustomplot.h \
 #    rrt.h
  \#    plotter.h

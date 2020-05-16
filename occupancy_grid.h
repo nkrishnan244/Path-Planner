@@ -9,12 +9,12 @@ using namespace std;
 class OccupancyGrid {
     public:
         OccupancyGrid();
-        OccupancyGrid(int num_rows, int num_cols, int padding);
-        bool add_rectangle_obs(int row, int col, int height, int width);
+        OccupancyGrid(int numRows, int numCols, int padding);
+        bool addRectangleObs(int row, int col, int height, int width);
+        bool addRectangleObsTopleft(int inputRow, int inputCol, int height, int width);
 
         vector<vector<int>> grid;
-        vector<vector<int>> rect_obstacles;
-        int num_cols;
+        int numCols;
         int size;
 };
 
