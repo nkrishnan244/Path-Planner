@@ -7,6 +7,7 @@
 #include <QPushButton>
 #include <QSignalMapper>
 #include <iostream>
+#include "planner.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -25,6 +26,9 @@ public:
     void makePlot(vector<vector<int>> &pts, OccupancyGrid &obs);
     void makeGrid(vector<vector<int>> &pts);
 
+    bool startPlanning(string planner, vector<int> startPoint, vector<vector<int>> existingPath);
+    bool checkObstacle(vector<vector<int>> &pts);
+
     void reset(bool);
 
 
@@ -35,6 +39,13 @@ public:
     int obsCol;
     int obsHeight;
     int obsWidth;
+
+    // used for plotting live (hopefully I will find a better way to deal with paintEvent)
+    chrono::milliseconds initTime;
+    string stage;
+    string plannerName;
+    int lastPoint;
+    QTimer* motionTimer;
 
 protected:
     void paintEvent(QPaintEvent *event);
@@ -56,6 +67,16 @@ private slots:
     void on_pushButton_6_clicked();
 
 
+
+    void on_pushButton_8_clicked();
+
+    void incrementPoint();
+
+    void on_pushButton_9_clicked();
+
+    void on_horizontalSlider_sliderMoved(int position);
+
+    void on_horizontalSlider_2_sliderMoved(int position);
 
 private:
     Ui::MainWindow *ui;

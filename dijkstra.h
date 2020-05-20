@@ -13,7 +13,7 @@ class Dijkstra : public Planner {
         virtual ~Dijkstra() {}
         Dijkstra(Node startNode, Node endNode, OccupancyGrid &occ);
         virtual vector<vector<int>> findPath();
-        virtual void addNodeToQueue(unsigned int row, unsigned int col, priority_queue<Node> &pq, Node* parentNodePtr);
+        virtual void addNodeToQueue(unsigned int row, unsigned int col, priority_queue<Node> &pq, Node* parentNodePtr, bool diagnal=false);
 };
 
 #endif

@@ -3,6 +3,7 @@
 #include <math.h>
 #include <unordered_set>
 #include "mainwindow.h"
+#include <QDebug>
 
 using namespace std;
 
@@ -12,11 +13,15 @@ Dijkstra::Dijkstra(Node startNode, Node endNode, OccupancyGrid &occ)
 
 }
 
-void Dijkstra::addNodeToQueue(unsigned int row, unsigned int col, priority_queue<Node> &pq, Node* parentNodePtr) {
+void Dijkstra::addNodeToQueue(unsigned int row, unsigned int col, priority_queue<Node> &pq, Node* parentNodePtr, bool diagnal) {
     if (occGrid.grid.at(row).at(col) == 0) {
         int g = parentNodePtr->get_g() + 1;
         Node* newNodePtr = new Node(row, col, g);
-        newNodePtr->val = g;
+        if (!diagnal) {
+            newNodePtr->val = g;
+        } else {
+            newNodePtr->val = g + 0.2; // might need to get rid, makes it the same as astar
+        }
         newNodePtr->parent = parentNodePtr;
         pq.push(*newNodePtr);
     }
@@ -41,7 +46,18 @@ vector<vector<int>> Dijkstra::findPath() {
     priority_queue<Node> pqueue;
     Node* currNodePtr = &start;
 
+    auto startTime = std::chrono::high_resolution_clock::now();
+
     while (*currNodePtr != end) {
+
+        auto endTime = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration<double>(endTime - startTime);
+        qDebug() << "duration is " << duration.count();
+        if (duration.count() > 10) {
+            return {};
+        }
+
+
         seenNodes.insert(*currNodePtr);
         int currRow = currNodePtr->get_row();
         int currCol = currNodePtr->get_col();
@@ -68,22 +84,22 @@ vector<vector<int>> Dijkstra::findPath() {
 
         // Up right
         if (currRow > 0 && currCol < occGrid.grid.size() - 1) {
-            addNodeToQueue(currRow - 1, currCol + 1, pqueue, currNodePtr);
+            addNodeToQueue(currRow - 1, currCol + 1, pqueue, currNodePtr, true);
         }
 
         // Up left
         if (currRow > 0 && currCol > 0) {
-            addNodeToQueue(currRow - 1, currCol - 1, pqueue, currNodePtr);
+            addNodeToQueue(currRow - 1, currCol - 1, pqueue, currNodePtr, true);
         }
 
         // Bottom Right
         if (currRow < occGrid.grid.size() - 1 && currCol < occGrid.grid.size() - 1) {
-            addNodeToQueue(currRow + 1, currCol + 1, pqueue, currNodePtr);
+            addNodeToQueue(currRow + 1, currCol + 1, pqueue, currNodePtr, true);
         }
 
         // Bottom Left
         if (currRow < occGrid.grid.size() - 1 && currCol > 0) {
-            addNodeToQueue(currRow + 1, currCol - 1, pqueue, currNodePtr);
+            addNodeToQueue(currRow + 1, currCol - 1, pqueue, currNodePtr, true);
         }
 
         Node nextNode = pqueue.top();
@@ -92,6 +108,12 @@ vector<vector<int>> Dijkstra::findPath() {
         while (seenNodes.find(nextNode) != seenNodes.end()) {
             nextNode = pqueue.top();
             pqueue.pop();
+            auto endTime = std::chrono::high_resolution_clock::now();
+            auto duration = std::chrono::duration<double>(endTime - startTime);
+            qDebug() << "duration is " << duration.count();
+            if (duration.count() > 10) {
+                return {};
+            }
         }
 
         currNodePtr = new Node(nextNode.get_row(), nextNode.get_col(), nextNode.get_g(), nextNode.get_h());

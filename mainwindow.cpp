@@ -6,11 +6,16 @@
 #include "rrt.h"
 #include <vector>
 #include <sstream>
+#include "planner.h"
+#include "dijkstra.h"
+#include "astar.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
+    stage = "planning";
+
     int occRows = 60;
     int occCols = 60;
     occSize = {occRows, occCols};
@@ -38,6 +43,11 @@ MainWindow::MainWindow(QWidget *parent)
 
         }
     }
+
+    ui->horizontalSlider_2->setSliderPosition(60);
+    motionTimer = new QTimer(this);
+
+
 }
 
 vector<int> get_row_col(int val, int gridSize) {
@@ -75,20 +85,47 @@ void MainWindow::clicked(int text) {
 void MainWindow::paintEvent(QPaintEvent *event) {
     QPainter painter(this);
 
-    int x = ui->gridLayoutWidget->geometry().x();
-    int y = ui->gridLayoutWidget->geometry().y();
+    if (stage != "Moving") {
 
-    painter.setPen(QPen(Qt::black, 8, Qt::DashDotLine, Qt::RoundCap));
-    if (solvedPts.size() == 0) return;
+        int x = ui->gridLayoutWidget->geometry().x();
+        int y = ui->gridLayoutWidget->geometry().y();
 
-    for (int i = 1; i < solvedPts[0].size(); i++) {
-        int row = solvedPts[0][i];
-        int col = solvedPts[1][i];
+        painter.setPen(QPen(Qt::black, 8, Qt::DashDotLine, Qt::RoundCap));
+        if (solvedPts.size() == 0) return;
 
-        QPoint newPoint = buttons[occSize[0]*row + col]->mapToParent(QPoint(0, 0));
-        QPoint prevPoint = buttons[occSize[0]*solvedPts[0][i-1] + solvedPts[1][i-1]]->mapToParent(QPoint(0, 0));
+        for (int i = 1; i < solvedPts[0].size(); i++) {
+            int row = solvedPts[0][i];
+            int col = solvedPts[1][i];
 
-        painter.drawLine(x + prevPoint.x(), y + prevPoint.y(), x + newPoint.x(), y + newPoint.y());
+            QPoint newPoint = buttons[occSize[0]*row + col]->mapToParent(QPoint(0, 0));
+            QPoint prevPoint = buttons[occSize[0]*solvedPts[0][i-1] + solvedPts[1][i-1]]->mapToParent(QPoint(0, 0));
+
+            painter.drawLine(x + prevPoint.x(), y + prevPoint.y(), x + newPoint.x(), y + newPoint.y());
+        }
+    }
+
+    else {
+
+        int x = ui->gridLayoutWidget->geometry().x();
+        int y = ui->gridLayoutWidget->geometry().y();
+
+        if (solvedPts.size() == 0) return;
+
+        for (int i = 1; i < solvedPts[0].size(); i++) {
+            if (i > solvedPts[0].size() - lastPoint) {
+//                qDebug() << " PAINTING BLUE";
+                painter.setPen(QPen(Qt::blue, 8, Qt::DashDotLine, Qt::RoundCap));
+            } else {
+                painter.setPen(QPen(Qt::black, 8, Qt::DashDotLine, Qt::RoundCap));
+            }
+            int row = solvedPts[0][i];
+            int col = solvedPts[1][i];
+
+            QPoint newPoint = buttons[occSize[0]*row + col]->mapToParent(QPoint(0, 0));
+            QPoint prevPoint = buttons[occSize[0]*solvedPts[0][i-1] + solvedPts[1][i-1]]->mapToParent(QPoint(0, 0));
+
+            painter.drawLine(x + prevPoint.x(), y + prevPoint.y(), x + newPoint.x(), y + newPoint.y());
+        }
     }
 }
 
@@ -170,68 +207,83 @@ void MainWindow::makePlot(vector<vector<int>> &pts) {
 
 }
 
-void MainWindow::on_pushButton_clicked()
-{
+bool MainWindow::startPlanning(string plannerAlg, vector<int> startPoint, vector<vector<int>> existingPath) {
     reset(false);
-
     Node start(0, 0, 0, 0);
     Node end(occSize[0] - 1, occSize[0] - 1, 0, 0);
+    plannerName = plannerAlg;
 
-    qDebug() << "Button has been clicked";
-
-    Dijkstra dijkstra(start, end, occ);
     auto startTime = std::chrono::high_resolution_clock::now();
-    vector<vector<int>> pts = dijkstra.findPath();
+
+    vector<vector<int>> pts;
+
+    if (plannerAlg == "Dijkstra") {
+        qDebug() << "Planning Dijkstra...";
+        Dijkstra planner(start, end, occ);
+        pts = planner.findPath();
+    } else if (plannerAlg == "Astar") {
+        qDebug() << "Planning A*...";
+        Astar planner(start, end, occ);
+        pts = planner.findPath();
+    } else if (plannerAlg == "RRT") {
+        qDebug() << "Planning RRT...";
+        RRT planner(start, end, occ);
+        pts = planner.findPath();
+    }
+
+    if (pts.size() == 0) {
+        ui->textEdit->setText(QString::fromStdString("Error: No path could be found!"));
+        return false;
+    }
+
+    if (existingPath.size() != 0) {
+
+        vector<int> finalRows;
+        vector<int> finalCols;
+
+        finalRows.reserve(pts[0].size() + existingPath[0].size());
+        finalCols.reserve(pts[0].size() + existingPath[0].size());
+
+        finalRows.insert(finalRows.end(), pts[0].begin(), pts[0].end());
+        finalCols.insert(finalCols.end(), pts[1].begin(), pts[1].end());
+
+        for (int i = 0; i < existingPath[0].size(); i++) {
+            finalRows.push_back(existingPath[0][existingPath[0].size() - 1 - i]);
+            finalCols.push_back(existingPath[1][existingPath[0].size() - 1 - i]);
+        }
+
+        pts = {finalRows, finalCols};
+    }
+
     auto endTime = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration<double>(endTime - startTime);
     string thisString = "Computation time is : ";
     thisString.append(to_string(duration.count()));
-    qDebug() << "Duration is : " << duration.count();
+
     ui->textEdit->setText(QString::fromStdString(thisString));
 
     makePlot(pts);
     makeGrid(pts);
+
+    return true;
+}
+
+void MainWindow::on_pushButton_clicked()
+{
+    stage = "Planning";
+    startPlanning("Dijkstra", {0, 0}, {});
 }
 
 void MainWindow::on_pushButton_2_clicked()
 {
-    reset(false);
-    Node start(0, 0, 0, 0);
-    Node end(occSize[0] - 1, occSize[0] - 1, 0, 0);
-
-    Astar astar(start, end, occ);
-    auto startTime = std::chrono::system_clock::now();
-    vector<vector<int>> pts = astar.findPath();
-    auto endTime = std::chrono::system_clock::now();
-    auto duration = std::chrono::duration<double>(endTime - startTime);
-    string thisString = "Computation time is : ";
-    thisString.append(to_string(duration.count()));
-    qDebug() << "Duration is : " << duration.count();
-    ui->textEdit->setText(QString::fromStdString(thisString));
-
-    makePlot(pts);
-    makeGrid(pts);
+    stage = "Planning";
+    startPlanning("Astar", {0, 0}, {});
 }
 
 void MainWindow::on_pushButton_4_clicked()
 {
-    reset(false);
-//    int occ_size = occSize[0];
-    Node start(0, 0, 0, 0);
-    Node end(occSize[0] - 1, occSize[0] - 1, 0, 0);
-
-    RRT astar(start, end, occ);
-    auto startTime = std::chrono::system_clock::now();
-    vector<vector<int>> pts = astar.findPath();
-    auto endTime = std::chrono::system_clock::now();
-    auto duration = std::chrono::duration<double>(endTime - startTime);
-    string thisString = "Computation time is : ";
-    thisString.append(to_string(duration.count()));
-    qDebug() << "Duration is : " << duration.count();
-    ui->textEdit->setText(QString::fromStdString(thisString));
-
-    makePlot(pts);
-    makeGrid(pts);
+    stage = "Planning";
+    startPlanning("RRT", {0, 0}, {});
 }
 
 void MainWindow::on_pushButton_3_clicked()
@@ -267,18 +319,26 @@ void MainWindow::on_widthText_textChanged()
 }
 
 
+// Insert obstacle
 void MainWindow::on_pushButton_5_clicked()
 {
+    if (obsCol + obsWidth >= occSize[1]) {
+        ui->textEdit->setText(QString::fromStdString("Error: Obstacle is too wide!"));
+        return;
+    }
+    if (obsRow + obsHeight >= occSize[0]) {
+        ui->textEdit->setText(QString::fromStdString("Error: Obstacle is too tall!"));
+        return;
+    }
     occ.addRectangleObsTopleft(obsRow, obsCol, obsHeight, obsWidth);
     QPalette pal;
     pal.setColor(QPalette::Button, QColor(Qt::red));
-    qDebug() << "MAX ROW IS " << obsRow + obsHeight;
-    qDebug() << "MAX COL IS " << obsCol + obsWidth;
     for (int row = obsRow; row <= obsRow + obsHeight; row++) {
         for (int col = obsCol; col <= obsCol + obsWidth; col++) {
             buttons[occSize[0]*row + col]->setPalette(pal);
         }
     }
+    ui->textEdit->setText(QString::fromStdString("Success: Obstacle has been added!"));
 
 }
 
@@ -293,4 +353,98 @@ void MainWindow::on_pushButton_6_clicked()
     this->ui->colText->setPlainText(QString::number(col));
     this->ui->heightText->setPlainText(QString::number(height));
     this->ui->widthText->setPlainText(QString::number(width));
+}
+
+bool MainWindow::checkObstacle(vector<vector<int>> &pts) {
+    int numPoints = pts[0].size();
+    for (int i=lastPoint; i<numPoints; i++) {
+        int row = pts[0][numPoints - 1 - i];
+        int col = pts[1][numPoints - 1 - i];
+        if (occ.grid.at(row).at(col) == 1) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void MainWindow::incrementPoint() {
+    bool obs = checkObstacle(solvedPts);
+    if (obs) {
+        vector<int> rows;
+        vector<int> cols;
+        for (int i = 0; i < lastPoint; i++) {
+            rows.push_back(solvedPts[0][solvedPts[0].size() - i - 1]);
+            cols.push_back(solvedPts[1][solvedPts[0].size() - i - 1]);
+        }
+        vector<vector<int>> initialPts = {rows, cols};
+        vector<int> initPoint = {solvedPts[0][solvedPts[0].size() - lastPoint - 1], solvedPts[1][solvedPts[0].size() - lastPoint - 1]};
+        bool planSuccessful = startPlanning(plannerName, initPoint, initialPts);
+        if (!planSuccessful) {
+            motionTimer->stop();
+            qDebug() << "couldn't solve the issue";
+            return;
+        }
+        qDebug("PATH IS OBSTRUCTED....aborting");
+    }
+    if (lastPoint == solvedPts[0].size() - 1) {
+        motionTimer->stop();
+        qDebug() << "Done Moving!";
+    }
+    lastPoint+=1;
+    qDebug() << "last point is " << lastPoint;
+    update();
+}
+
+// Start Moving Button
+void MainWindow::on_pushButton_8_clicked()
+{
+    if (solvedPts.size() == 0) {
+        ui->textEdit->setText(QString::fromStdString("Error: No path has been planned!"));
+        return;
+    }
+    if (stage != "Moving") {
+        lastPoint = 0;
+    }
+
+    stage = "Moving";
+
+    if (motionTimer->isActive()) {
+        qDebug() << "TIMER IS ALREADY ACTIVE";
+        return;
+    }
+
+    connect(motionTimer, SIGNAL(timeout()), this, SLOT(incrementPoint()));
+    int currPos = this->ui->horizontalSlider_2->value();
+    qDebug() << "UPDATING EVERY " << (-48.0*currPos + 5000.0)/1000.0;
+    motionTimer->start(-48*currPos + 5000);
+//    update();
+}
+
+void MainWindow::on_pushButton_9_clicked()
+{
+    if (solvedPts.size() == 0) {
+        ui->textEdit->setText(QString::fromStdString("Error: No path has been planned!"));
+        return;
+    }
+
+    if (motionTimer->isActive()) {
+        motionTimer->stop();
+    } else {
+        int currPos = this->ui->horizontalSlider_2->value();
+        qDebug() << "UPDATING EVERY " << (-48.0*currPos + 5000.0)/1000.0;
+        motionTimer->start(-48*currPos + 5000);
+    }
+}
+
+void MainWindow::on_horizontalSlider_sliderMoved(int position)
+{
+    qDebug() << "Slider Position is " << position;
+}
+
+
+void MainWindow::on_horizontalSlider_2_sliderMoved(int position)
+{
+    motionTimer->stop();
+    qDebug() << "UPDATING EVERY " << (-48.0*position + 5000.0)/1000.0;
+    motionTimer->start(-48*position + 5000);
 }

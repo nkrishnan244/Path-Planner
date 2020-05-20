@@ -13,14 +13,14 @@
 using namespace std;
 
 int main(int argc, char *argv[]) {
-    int occ_size = 128;
+    int occSize = 3;
     Node start(0, 0, 0, 0);
-    Node end(occ_size - 1, occ_size - 1, 0, 0);
+    Node end(occSize - 1, occSize - 1, 0, 0);
 
     // vector<vector<int>> occ;
 
-    OccupancyGrid occ(occ_size, occ_size, 0);
-    occ.add_rectangle_obs(64, 64, 30, 30);
+    OccupancyGrid occ(occSize, occSize, 0);
+//    occ.add_rectangle_obs(64, 64, 30, 30);
 
     QApplication a(argc, argv);
 //    MainWindow plotter;
@@ -30,8 +30,8 @@ int main(int argc, char *argv[]) {
     // Plotter plotter;
     // plotter.plot_occupancy_grid(occ);
 
-    Astar astar(start, end, occ);
-    vector<vector<int>> pts = astar.find_path();
+//    Astar astar(start, end, occ);
+//    vector<vector<int>> pts = astar.find_path();
 
     MainWindow plotter;
 //    plotter.make_plot(pts);

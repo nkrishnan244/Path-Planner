@@ -57,6 +57,7 @@ vector<vector<int>> RRT::findPath() {
     vector<int> col;
     int rrtDist = 8;
     int margin = 0;
+    srand(time(NULL));
     while (dist(end, currNode->get_row(), currNode->get_col()) > rrtDist + margin) {
         pair<int, int> currCoord = getRandomCoordinates();
         int randRow = currCoord.first;

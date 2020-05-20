@@ -12,7 +12,7 @@ class Planner {
     public:
         Planner();
         Planner(Node startNode, Node endNode, OccupancyGrid &occ);
-        virtual vector<vector<int>> findPath() = 0;
+        virtual vector<vector<int>> findPath()=0;
 
     // private:
         Node start;
