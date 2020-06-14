@@ -22,8 +22,6 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
-    void makePlot(vector<vector<int>> &pts);
-    void makePlot(vector<vector<int>> &pts, OccupancyGrid &obs);
     void makeGrid(vector<vector<int>> &pts);
 
     bool startPlanning(string planner, vector<int> startPoint, vector<vector<int>> existingPath);
@@ -33,7 +31,6 @@ public:
 
 
     OccupancyGrid occ;
-    vector<int> occSize;
     vector<vector<int>> solvedPts;
     int obsRow;
     int obsCol;
@@ -51,10 +48,10 @@ protected:
     void paintEvent(QPaintEvent *event);
 
 private slots:
-    void on_pushButton_clicked();
-    void on_pushButton_2_clicked();
-    void on_pushButton_3_clicked();
-    void on_pushButton_4_clicked();
+    void on_dijkstraButton_clicked();
+    void on_aStarButton_clicked();
+    void on_resetButton_clicked();
+    void on_rrtButton_clicked();
     void clicked(int text);
 
     void on_rowText_textChanged();
@@ -62,21 +59,25 @@ private slots:
     void on_heightText_textChanged();
     void on_widthText_textChanged();
 
-    void on_pushButton_5_clicked();
+    void on_insertObstacleButton_clicked();
 
-    void on_pushButton_6_clicked();
+    void on_randomizeButton_clicked();
 
 
 
-    void on_pushButton_8_clicked();
+    void on_startMovingButton_clicked();
 
     void incrementPoint();
 
-    void on_pushButton_9_clicked();
+    void on_pausePlayButton_clicked();
 
-    void on_horizontalSlider_sliderMoved(int position);
+    void on_planningSpeedSlider_sliderMoved(int position);
 
-    void on_horizontalSlider_2_sliderMoved(int position);
+    void on_motionSpeedSlider_sliderMoved(int position);
+
+    void on_printPathButton_clicked();
+
+    void on_qLearningButton_clicked();
 
 private:
     Ui::MainWindow *ui;

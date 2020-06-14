@@ -9,126 +9,152 @@
 #include "planner.h"
 #include "dijkstra.h"
 #include "astar.h"
+#include <fstream>
+#include <iterator>
+#include "qlearning.h"
+
+// Right now, the size of the occupancy grid is fixed and can not be edited by the user
+static int OCC_ROWS = 60;
+static int OCC_COLS = OCC_ROWS; // for now we always assume the grid is square so these can both be used
+static vector<int> OCC_SIZE{OCC_ROWS, OCC_COLS};
+
+static int BUTTON_SIZE = 4;
+
+// Add colors to the project
+static QPalette RED_PALETTE;
+static QPalette WHITE_PALETTE;
+static QPalette BLUE_PALETTE;
+
+// Maps button vector index values to a row, col pair
+pair<int, int> indexValToRowCol(int index) {
+    int col = index%OCC_ROWS;
+    int row = (index - col)/OCC_ROWS;
+    return pair<int, int>{row, col};
+}
+
+// Maps a row, col pair to a button vector index value
+int rowColToIndexVal(int row, int col) {
+    return OCC_COLS*row + col;
+}
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
-    stage = "planning";
+    // initialize colors
+    RED_PALETTE.setColor(QPalette::Button, QColor(Qt::red));
+    WHITE_PALETTE.setColor(QPalette::Button, QColor(Qt::white));
+    BLUE_PALETTE.setColor(QPalette::Button, QColor(Qt::blue));
 
-    int occRows = 60;
-    int occCols = 60;
-    occSize = {occRows, occCols};
-    occ = OccupancyGrid(occRows, occCols, 0);
+    stage = "planning"; // variable used to signal if we are planning or actually moving
+
+    occ = OccupancyGrid(OCC_ROWS, OCC_COLS, 0);
 
     ui->setupUi(this);
 
     signalMapper = new QSignalMapper(this);
-    connect(signalMapper, SIGNAL(mapped(int)), this, SLOT(clicked(int)));
+    connect(signalMapper, SIGNAL(mapped(int)), this, SLOT(clicked(int))); // !! add comment explaining this !!
 
-    int bSize = 250/sqrt(occRows*occCols);
+    const QSize btnSize = QSize(BUTTON_SIZE, BUTTON_SIZE);
 
-    const QSize btnSize = QSize(bSize, bSize);
-    for (int row = 0; row < occRows*occCols; row++) {
-        buttons.push_back(new QPushButton(QString()));
-        buttons[row]->setFixedSize(btnSize);
-        signalMapper->setMapping(buttons[row], row);
-        connect(buttons[row], SIGNAL(clicked()), signalMapper, SLOT(map()));
+    // Create a vector of buttons (pointers) to represent each button in the 2d grid
+    for (int buttonNum = 0; buttonNum < OCC_ROWS*OCC_COLS; buttonNum++) {
+        buttons.push_back(new QPushButton(QString())); // buttons aren't labeled -> maybe add numbers in the future
+        buttons[buttonNum]->setFixedSize(btnSize);
+        signalMapper->setMapping(buttons[buttonNum], buttonNum);
+        connect(buttons[buttonNum], SIGNAL(clicked()), signalMapper, SLOT(map())); // !! add comment explaining this !!
     }
 
-
-    for (int row = 0; row < occRows; row++) {
-        for (int col = 0; col < occCols; col++) {
-            ui->gridLayout->addWidget(buttons[occCols*row + col], row, col);
-
+    // Place the buttons on the grid layout
+    for (int row = 0; row < OCC_ROWS; row++) {
+        for (int col = 0; col < OCC_COLS; col++) {
+            ui->gridLayout->addWidget(buttons[rowColToIndexVal(row, col)], row, col); // adds a button at the specified row and column position
         }
     }
 
-    ui->horizontalSlider_2->setSliderPosition(60);
+    ui->motionSpeedSlider->setSliderPosition(60); // initial slider position for motion speed
+
+    // create timer for updating motion
     motionTimer = new QTimer(this);
-
-
+    connect(motionTimer, SIGNAL(timeout()), this, SLOT(incrementPoint()));
 }
 
-vector<int> get_row_col(int val, int gridSize) {
-    int col = val%gridSize;
-    int row = (val - col)/gridSize;
-    return vector<int>{row, col};
-}
+// when a button is clicked, toggle color and add to/remove from occ grid
+void MainWindow::clicked(int buttonIndex) {
+    qDebug() << buttonIndex;
 
-void MainWindow::clicked(int text) {
-    qDebug() << text;
-    QPalette redPal;
-    redPal.setColor(QPalette::Button, QColor(Qt::red));
+    QPalette buttonColor = buttons[buttonIndex]->palette();
 
-    QPalette whitePal;
-    whitePal.setColor(QPalette::Button, QColor(Qt::white));
+    buttons[buttonIndex]->setAutoFillBackground(true);
 
-    QPalette currColor = buttons[text]->palette();
+    pair<int, int> rowCol = indexValToRowCol(buttonIndex);
 
-    buttons[text]->setAutoFillBackground(true);
-
-    vector<int> rowCol = get_row_col(text, occSize[0]);
-
-    if (currColor == redPal) {
-        occ.grid[rowCol[0]][rowCol[1]] = 0;
-        buttons[text]->setPalette(whitePal);
+    if (buttonColor == RED_PALETTE) {
+        occ.grid.at(rowCol.first).at(rowCol.second) = 0;
+        buttons[buttonIndex]->setPalette(WHITE_PALETTE);
     }
     else {
-        occ.grid[rowCol[0]][rowCol[1]] = 1;
-        buttons[text]->setPalette(redPal);
+        occ.grid.at(rowCol.first).at(rowCol.second) = 1;
+        buttons[buttonIndex]->setPalette(RED_PALETTE);
     }
 
-    buttons[text]->update();
+    buttons[buttonIndex]->update();
 }
 
+
+// Paints on top of thegraphs
 void MainWindow::paintEvent(QPaintEvent *event) {
     QPainter painter(this);
 
     if (stage != "Moving") {
 
-        int x = ui->gridLayoutWidget->geometry().x();
-        int y = ui->gridLayoutWidget->geometry().y();
+        // get the top left position of the grid Layout
+        int topLeftX = ui->gridLayoutWidget->geometry().x();
+        int topLeftY = ui->gridLayoutWidget->geometry().y();
 
         painter.setPen(QPen(Qt::black, 8, Qt::DashDotLine, Qt::RoundCap));
         if (solvedPts.size() == 0) return;
 
-        for (int i = 1; i < solvedPts[0].size(); i++) {
-            int row = solvedPts[0][i];
-            int col = solvedPts[1][i];
+        // draw all the points after mapping them to the global frame
+        for (int i = 1; i < solvedPts.at(0).size(); i++) {
+            int row = solvedPts.at(0).at(i);
+            int col = solvedPts.at(1).at(i);
 
-            QPoint newPoint = buttons[occSize[0]*row + col]->mapToParent(QPoint(0, 0));
-            QPoint prevPoint = buttons[occSize[0]*solvedPts[0][i-1] + solvedPts[1][i-1]]->mapToParent(QPoint(0, 0));
+            QPoint newPoint = buttons.at(rowColToIndexVal(row, col))->mapToParent(QPoint(0, 0));
+            QPoint prevPoint = buttons.at(rowColToIndexVal(solvedPts[0][i-1], solvedPts[1][i-1]))->mapToParent(QPoint(0, 0));
 
-            painter.drawLine(x + prevPoint.x(), y + prevPoint.y(), x + newPoint.x(), y + newPoint.y());
+            painter.drawLine(topLeftX + prevPoint.x(), topLeftY + prevPoint.y(), topLeftX + newPoint.x(), topLeftY + newPoint.y());
         }
     }
 
     else {
 
-        int x = ui->gridLayoutWidget->geometry().x();
-        int y = ui->gridLayoutWidget->geometry().y();
+        int topLeftX = ui->gridLayoutWidget->geometry().x();
+        int topLeftY = ui->gridLayoutWidget->geometry().y();
 
         if (solvedPts.size() == 0) return;
 
         for (int i = 1; i < solvedPts[0].size(); i++) {
-            if (i > solvedPts[0].size() - lastPoint) {
-//                qDebug() << " PAINTING BLUE";
+
+            // For all points up to our current point, paint blue. For the rest, paint black
+            if (i > solvedPts[0].size() - lastPoint - 1) {
                 painter.setPen(QPen(Qt::blue, 8, Qt::DashDotLine, Qt::RoundCap));
             } else {
                 painter.setPen(QPen(Qt::black, 8, Qt::DashDotLine, Qt::RoundCap));
             }
+
             int row = solvedPts[0][i];
             int col = solvedPts[1][i];
 
-            QPoint newPoint = buttons[occSize[0]*row + col]->mapToParent(QPoint(0, 0));
-            QPoint prevPoint = buttons[occSize[0]*solvedPts[0][i-1] + solvedPts[1][i-1]]->mapToParent(QPoint(0, 0));
+            QPoint newPoint = buttons[rowColToIndexVal(row, col)]->mapToParent(QPoint(0, 0));
+            QPoint prevPoint = buttons[rowColToIndexVal(solvedPts[0][i-1], solvedPts[1][i-1])]->mapToParent(QPoint(0, 0));
 
-            painter.drawLine(x + prevPoint.x(), y + prevPoint.y(), x + newPoint.x(), y + newPoint.y());
+            painter.drawLine(topLeftX + prevPoint.x(), topLeftY + prevPoint.y(), topLeftX + newPoint.x(), topLeftY + newPoint.y());
         }
     }
 }
 
+// Plot the solved pts on the grid (in case we don't want to draw a line over the points)
 void MainWindow::makeGrid(vector<vector<int>> &pts) {
     int prevRow = 0;
     int prevCol = 0;
@@ -139,20 +165,17 @@ void MainWindow::makeGrid(vector<vector<int>> &pts) {
         int row = pts[0][i];
         int col = pts[1][i];
 
-        QPalette pal;
-        pal.setColor(QPalette::Button, QColor(Qt::blue));
-        buttons[occSize[0]*row + col]->setAutoFillBackground(true);
-        buttons[occSize[0]*row + col]->setPalette(pal);
-        buttons[occSize[0]*row + col]->update();
+        buttons[rowColToIndexVal(row, col)]->setAutoFillBackground(true);
+        buttons[rowColToIndexVal(row, col)]->setPalette(BLUE_PALETTE);
+        buttons[rowColToIndexVal(row, col)]->update();
 
         prevRow = row;
         prevCol = col;
-
     }
     update();
-
 }
 
+// Destructor (should probably move this)
 MainWindow::~MainWindow()
 {
     delete ui;
@@ -160,57 +183,21 @@ MainWindow::~MainWindow()
 
 void MainWindow::reset(bool resetObs)
 {
-    QPalette pal;
-    QPalette redPal;
-    redPal.setColor(QPalette::Button, QColor(Qt::red));
-
-    pal.setColor(QPalette::Button, QColor(Qt::white));
-    for (int i = 0; i < occSize[0]*occSize[1]; i++) {
+    for (int i = 0; i < OCC_ROWS*OCC_COLS; i++) {
         buttons[i]->setAutoFillBackground(true);
-        if ((resetObs == true) || (buttons[i]->palette() != redPal)) {
-            vector<int> rowCol = get_row_col(i, occSize[0]);
-            occ.grid[rowCol[0]][rowCol[1]] = 0;
-            buttons[i]->setPalette(pal);
+        if ((resetObs == true) || (buttons[i]->palette() != RED_PALETTE)) {
+            pair<int, int> rowCol = indexValToRowCol(i);
+            occ.grid.at(rowCol.first).at(rowCol.second) = 0;
+            buttons[i]->setPalette(WHITE_PALETTE);
         }
         buttons[i]->update();
     }
 }
 
-
-void MainWindow::makePlot(vector<vector<int>> &pts) {
-    // generate some data:
-    x.clear();
-    y.clear();
-
-
-    int numPts = pts[0].size();
-//    QVector<double> x(num_pts), y(num_pts); // initialize with entries 0..100
-    for (int i=0; i<numPts; ++i)
-    {
-        x.push_back(pts[0][i]);
-        y.push_back(pts[1][i]);
-    }
-//    qv_x.append(1);
-
-    // create graph and assign data to it:
-    ui->customPlot->addGraph();
-    ui->customPlot->graph(0)->setData(x, y);
-    ui->customPlot->graph(0)->setPen(QPen(Qt::blue)); // line color blue for first graph
-    // give the axes some labels:
-    ui->customPlot->xAxis->setLabel("x");
-    ui->customPlot->yAxis->setLabel("y");
-    // set axes ranges, so we see all data:
-    ui->customPlot->xAxis->setRange(0, 9);
-    ui->customPlot->yAxis->setRange(0, 9);
-    ui->customPlot->replot();
-    ui->customPlot->update();
-
-}
-
 bool MainWindow::startPlanning(string plannerAlg, vector<int> startPoint, vector<vector<int>> existingPath) {
     reset(false);
-    Node start(0, 0, 0, 0);
-    Node end(occSize[0] - 1, occSize[0] - 1, 0, 0);
+    Node start(startPoint[0], startPoint[1], 0, 0);
+    Node end(OCC_ROWS - 1, OCC_COLS - 1, 0, 0);
     plannerName = plannerAlg;
 
     auto startTime = std::chrono::high_resolution_clock::now();
@@ -229,12 +216,23 @@ bool MainWindow::startPlanning(string plannerAlg, vector<int> startPoint, vector
         qDebug() << "Planning RRT...";
         RRT planner(start, end, occ);
         pts = planner.findPath();
+    } else if (plannerAlg == "Q-Learning") {
+        qDebug() << "Planning Q-Learning...";
+        QLearning planner(start, end, occ);
+        planner.trainModel();
+        pts = planner.findPath();
     }
 
     if (pts.size() == 0) {
         ui->textEdit->setText(QString::fromStdString("Error: No path could be found!"));
         return false;
     }
+
+//    for (int ptIndex = 0; ptIndex < pts.size(); ptIndex++) {
+//        qDebug() << "Row is " << pts[ptIndex][0] << ", Col is " << pts[ptIndex][1];
+//    }
+
+    qDebug() << "Finished Planning!";
 
     if (existingPath.size() != 0) {
 
@@ -262,31 +260,33 @@ bool MainWindow::startPlanning(string plannerAlg, vector<int> startPoint, vector
 
     ui->textEdit->setText(QString::fromStdString(thisString));
 
-    makePlot(pts);
     makeGrid(pts);
 
     return true;
 }
 
-void MainWindow::on_pushButton_clicked()
+void MainWindow::on_dijkstraButton_clicked()
 {
     stage = "Planning";
+    motionTimer->stop();
     startPlanning("Dijkstra", {0, 0}, {});
 }
 
-void MainWindow::on_pushButton_2_clicked()
+void MainWindow::on_aStarButton_clicked()
 {
     stage = "Planning";
+    motionTimer->stop();
     startPlanning("Astar", {0, 0}, {});
 }
 
-void MainWindow::on_pushButton_4_clicked()
+void MainWindow::on_rrtButton_clicked()
 {
     stage = "Planning";
+    motionTimer->stop();
     startPlanning("RRT", {0, 0}, {});
 }
 
-void MainWindow::on_pushButton_3_clicked()
+void MainWindow::on_resetButton_clicked()
 {
     reset(true);
 }
@@ -320,13 +320,13 @@ void MainWindow::on_widthText_textChanged()
 
 
 // Insert obstacle
-void MainWindow::on_pushButton_5_clicked()
+void MainWindow::on_insertObstacleButton_clicked()
 {
-    if (obsCol + obsWidth >= occSize[1]) {
+    if (obsCol + obsWidth >= OCC_COLS) {
         ui->textEdit->setText(QString::fromStdString("Error: Obstacle is too wide!"));
         return;
     }
-    if (obsRow + obsHeight >= occSize[0]) {
+    if (obsRow + obsHeight >= OCC_ROWS) {
         ui->textEdit->setText(QString::fromStdString("Error: Obstacle is too tall!"));
         return;
     }
@@ -335,20 +335,20 @@ void MainWindow::on_pushButton_5_clicked()
     pal.setColor(QPalette::Button, QColor(Qt::red));
     for (int row = obsRow; row <= obsRow + obsHeight; row++) {
         for (int col = obsCol; col <= obsCol + obsWidth; col++) {
-            buttons[occSize[0]*row + col]->setPalette(pal);
+            buttons[rowColToIndexVal(row, col)]->setPalette(pal);
         }
     }
     ui->textEdit->setText(QString::fromStdString("Success: Obstacle has been added!"));
 
 }
 
-void MainWindow::on_pushButton_6_clicked()
+void MainWindow::on_randomizeButton_clicked()
 {
     srand(time(NULL));
-    int row = rand()%occSize[0];
-    int col = rand()%occSize[0];
-    int height = rand()%(occSize[0] - row);
-    int width = rand()%(occSize[0] - col);
+    int row = rand()%OCC_ROWS;
+    int col = rand()%OCC_COLS;
+    int height = rand()%(OCC_ROWS - row);
+    int width = rand()%(OCC_COLS - col);
     this->ui->rowText->setPlainText(QString::number(row));
     this->ui->colText->setPlainText(QString::number(col));
     this->ui->heightText->setPlainText(QString::number(height));
@@ -370,6 +370,12 @@ bool MainWindow::checkObstacle(vector<vector<int>> &pts) {
 void MainWindow::incrementPoint() {
     bool obs = checkObstacle(solvedPts);
     if (obs) {
+        vector<int> initPoint = {solvedPts[0][solvedPts[0].size() - lastPoint - 1], solvedPts[1][solvedPts[0].size() - lastPoint - 1]};
+        if (occ.grid.at(initPoint[0]).at(initPoint[1]) == 1) {
+            qDebug() << "current point is covered, can't solve!";
+            motionTimer->stop();
+            return;
+        }
         vector<int> rows;
         vector<int> cols;
         for (int i = 0; i < lastPoint; i++) {
@@ -377,7 +383,6 @@ void MainWindow::incrementPoint() {
             cols.push_back(solvedPts[1][solvedPts[0].size() - i - 1]);
         }
         vector<vector<int>> initialPts = {rows, cols};
-        vector<int> initPoint = {solvedPts[0][solvedPts[0].size() - lastPoint - 1], solvedPts[1][solvedPts[0].size() - lastPoint - 1]};
         bool planSuccessful = startPlanning(plannerName, initPoint, initialPts);
         if (!planSuccessful) {
             motionTimer->stop();
@@ -386,17 +391,18 @@ void MainWindow::incrementPoint() {
         }
         qDebug("PATH IS OBSTRUCTED....aborting");
     }
+    lastPoint+=1;
     if (lastPoint == solvedPts[0].size() - 1) {
         motionTimer->stop();
+        lastPoint = 0;
         qDebug() << "Done Moving!";
     }
-    lastPoint+=1;
     qDebug() << "last point is " << lastPoint;
     update();
 }
 
 // Start Moving Button
-void MainWindow::on_pushButton_8_clicked()
+void MainWindow::on_startMovingButton_clicked()
 {
     if (solvedPts.size() == 0) {
         ui->textEdit->setText(QString::fromStdString("Error: No path has been planned!"));
@@ -408,19 +414,13 @@ void MainWindow::on_pushButton_8_clicked()
 
     stage = "Moving";
 
-    if (motionTimer->isActive()) {
-        qDebug() << "TIMER IS ALREADY ACTIVE";
-        return;
-    }
-
-    connect(motionTimer, SIGNAL(timeout()), this, SLOT(incrementPoint()));
-    int currPos = this->ui->horizontalSlider_2->value();
+    int currPos = this->ui->motionSpeedSlider->value();
     qDebug() << "UPDATING EVERY " << (-48.0*currPos + 5000.0)/1000.0;
     motionTimer->start(-48*currPos + 5000);
 //    update();
 }
 
-void MainWindow::on_pushButton_9_clicked()
+void MainWindow::on_pausePlayButton_clicked()
 {
     if (solvedPts.size() == 0) {
         ui->textEdit->setText(QString::fromStdString("Error: No path has been planned!"));
@@ -430,21 +430,41 @@ void MainWindow::on_pushButton_9_clicked()
     if (motionTimer->isActive()) {
         motionTimer->stop();
     } else {
-        int currPos = this->ui->horizontalSlider_2->value();
+        int currPos = this->ui->motionSpeedSlider->value();
         qDebug() << "UPDATING EVERY " << (-48.0*currPos + 5000.0)/1000.0;
         motionTimer->start(-48*currPos + 5000);
     }
 }
 
-void MainWindow::on_horizontalSlider_sliderMoved(int position)
+void MainWindow::on_planningSpeedSlider_sliderMoved(int position)
 {
     qDebug() << "Slider Position is " << position;
 }
 
 
-void MainWindow::on_horizontalSlider_2_sliderMoved(int position)
+void MainWindow::on_motionSpeedSlider_sliderMoved(int position)
 {
     motionTimer->stop();
     qDebug() << "UPDATING EVERY " << (-48.0*position + 5000.0)/1000.0;
     motionTimer->start(-48*position + 5000);
+}
+
+void MainWindow::on_printPathButton_clicked()
+{
+    if (solvedPts.size() == 0) {
+        return;
+    }
+
+    for (int i = 0; i < solvedPts[0].size(); i++) {
+        qDebug() << "Row is " << solvedPts[0][i] << ", Col is " << solvedPts[1][i];
+    }
+}
+
+void MainWindow::on_qLearningButton_clicked()
+{
+    stage = "Planning";
+    motionTimer->stop();
+    startPlanning("Q-Learning", {0, 0}, {});
+
+    qDebug() << " WE HERE TOO";
 }
