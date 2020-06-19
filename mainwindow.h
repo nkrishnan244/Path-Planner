@@ -8,6 +8,7 @@
 #include <QSignalMapper>
 #include <iostream>
 #include "planner.h"
+#include "point.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -22,16 +23,20 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
-    void makeGrid(vector<vector<int>> &pts);
+    void makeGrid(vector<Point> &pts);
 
-    bool startPlanning(string planner, vector<int> startPoint, vector<vector<int>> existingPath);
-    bool checkObstacle(vector<vector<int>> &pts);
+    bool startPlanning(string planner, Point startPoint, vector<Point> existingPath);
+    bool checkObstacle(vector<Point> &pts);
 
     void reset(bool);
 
+    QPalette redPalette;
+    QPalette whitePalette;
+    QPalette bluePalette;
+
 
     OccupancyGrid occ;
-    vector<vector<int>> solvedPts;
+    vector<Point> solvedPts;
     int obsRow;
     int obsCol;
     int obsHeight;
