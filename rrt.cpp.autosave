@@ -40,8 +40,6 @@ Node* RRT::findClosestNode(int randRow, int randCol) {
 
 void RRT::addIntermediateNodes(vector<Point> &nodes, Node* childNode, Node* parentNode) {
 
-
-
     // Horizontal
     if (parentNode->getRow() == childNode->getRow()) {
 

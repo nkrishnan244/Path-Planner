@@ -12,10 +12,11 @@ class RRT : public Planner
     public:
         RRT(Node startNode, Node endNode, OccupancyGrid &occ);
         virtual ~RRT() {}
-        virtual vector<vector<int>> findPath();
+        virtual vector<Point> findPath();
         pair<int, int> getRandomCoordinates();
-        Node findClosestNode(int randRow, int randCol);
+        Node* findClosestNode(int randRow, int randCol);
         bool checkObstacle(Node* startNode, Node* finalNode);
+        void addIntermediateNodes(vector<Point> &nodes, Node* closestNode, Node* currNode);
 
 //        int rrt_dist;
 
