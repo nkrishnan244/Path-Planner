@@ -12,11 +12,10 @@ class Astar : public Dijkstra {
     public:
         Astar(Node startNode, Node endNode, OccupancyGrid &occ);
         ~Astar();
-        vector<vector<int>> findPath();
 
-    // private:
+        void setNodeValue(Node &newNode);
+        double calculateHeuristic(double row, double col);
         void addNodeToQueue(int row, int col, priority_queue<Node> &pq, Node* parentNodePtr);
-
 };
 
 #endif

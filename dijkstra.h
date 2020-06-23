@@ -12,8 +12,13 @@ class Dijkstra : public Planner {
     public:
         virtual ~Dijkstra() {}
         Dijkstra(Node startNode, Node endNode, OccupancyGrid &occ);
-        virtual vector<vector<int>> findPath();
-        virtual void addNodeToQueue(unsigned int row, unsigned int col, priority_queue<Node> &pq, Node* parentNodePtr, bool diagnal=false);
+        vector<Point> findPath();
+        virtual void setNodeValue(Node &newNode);
+        void addNodeToQueue(int row, int col, priority_queue<Node> &pq, Node* parentNodePtr);
+
+        const double maxSolveTime = 10.0;
+        const double diagonalDistance = 1.414;
+        const double nonDiagonalDistance = 1.0;
 };
 
 #endif

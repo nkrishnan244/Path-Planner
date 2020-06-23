@@ -10,127 +10,83 @@ using namespace std;
 Dijkstra::Dijkstra(Node startNode, Node endNode, OccupancyGrid &occ)
 : Planner(startNode, endNode, occ)
 {
-
 }
 
-void Dijkstra::addNodeToQueue(unsigned int row, unsigned int col, priority_queue<Node> &pq, Node* parentNodePtr, bool diagnal) {
-    if (occGrid.grid.at(row).at(col) == 0) {
-        int g = parentNodePtr->get_g() + 1;
-        Node* newNodePtr = new Node(row, col, g);
-        if (!diagnal) {
-            newNodePtr->val = g;
-        } else {
-            newNodePtr->val = g + 0.2; // might need to get rid, makes it the same as astar
-        }
-        newNodePtr->parent = parentNodePtr;
-        pq.push(*newNodePtr);
+void Dijkstra::setNodeValue(Node &newNode) {
+    newNode.setVal(newNode.getG());
+}
+
+void Dijkstra::addNodeToQueue(int row, int col, priority_queue<Node> &pq, Node* parentNode) {
+    Node newNode(row, col);
+    newNode.parent = parentNode;
+    double g;
+
+    // Along a diagnal, the step is greater than 1 (sqrt of 2)
+    if (row != parentNode->getRow() && col != parentNode->getCol()) {
+        g = parentNode->getG() + diagonalDistance;
     }
-
+    else {
+        g = parentNode->getG() + nonDiagonalDistance;
+    }
+    newNode.setG(g);
+    setNodeValue(newNode); // For Dijkstra, only the number of steps determines the value of a node
+    pq.push(newNode);
 }
 
-namespace std
-{
-template<>
-    struct hash<Node>
-    {
-        size_t
-        operator()(const Node &node) const
-        {
-            return hash<int>()(node.get_row()) ^ hash<int>()(node.get_col());
-        }
-    };
-}
+// Creates a hash function that is used for marking row, col pairs as seen
+struct pair_hash {
+    inline size_t operator()(const pair<int, int> &v) const {
+        return hash<int>()(v.first) ^ hash<int>()(v.second);
+    }
+};
 
-vector<vector<int>> Dijkstra::findPath() {
-    unordered_set<Node> seenNodes;
+vector<Point> Dijkstra::findPath() {
+
+    // Creates a vector that represents the position of all neighbors relative to current node
+    vector<pair<int, int>> neighborIncVec{{-1, -1}, {-1, 0}, {-1, 1}, {0, 1}, {0, -1}, {1, 1}, {1, -1}, {1, 0}};
+
+    unordered_set<pair<int, int>, pair_hash> seenNodes;
     priority_queue<Node> pqueue;
-    Node* currNodePtr = &start;
+    Node* currNode = new Node(start);
 
-    auto startTime = std::chrono::high_resolution_clock::now();
+    auto startTime = chrono::high_resolution_clock::now();
 
-    while (*currNodePtr != end) {
+    while (*currNode != end) {
 
-        auto endTime = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration<double>(endTime - startTime);
-        qDebug() << "duration is " << duration.count();
-        if (duration.count() > 10) {
+        // Check to make sure that solution is not taking too long to find
+        auto endTime = chrono::high_resolution_clock::now();
+        auto duration = chrono::duration<double>(endTime - startTime);
+        if (duration.count() > maxSolveTime) {
             return {};
         }
 
+        int currRow = currNode->getRow();
+        int currCol = currNode->getCol();
+        seenNodes.insert({currRow, currCol});
 
-        seenNodes.insert(*currNodePtr);
-        int currRow = currNodePtr->get_row();
-        int currCol = currNodePtr->get_col();
-
-        // Check down
-        if (currRow < occGrid.grid.size() - 1) {
-            addNodeToQueue(currRow + 1, currCol, pqueue, currNodePtr);
-        }
-
-        // Check up
-        if (currRow > 0) {
-            addNodeToQueue(currRow - 1, currCol, pqueue, currNodePtr);
-        }
-
-        // Check right
-        if (currCol < occGrid.grid.size() - 1) {
-            addNodeToQueue(currRow, currCol + 1, pqueue, currNodePtr);
-        }
-
-        // Check left
-        if (currCol > 0) {
-            addNodeToQueue(currRow, currCol - 1, pqueue, currNodePtr);
-        }
-
-        // Up right
-        if (currRow > 0 && currCol < occGrid.grid.size() - 1) {
-            addNodeToQueue(currRow - 1, currCol + 1, pqueue, currNodePtr, true);
-        }
-
-        // Up left
-        if (currRow > 0 && currCol > 0) {
-            addNodeToQueue(currRow - 1, currCol - 1, pqueue, currNodePtr, true);
-        }
-
-        // Bottom Right
-        if (currRow < occGrid.grid.size() - 1 && currCol < occGrid.grid.size() - 1) {
-            addNodeToQueue(currRow + 1, currCol + 1, pqueue, currNodePtr, true);
-        }
-
-        // Bottom Left
-        if (currRow < occGrid.grid.size() - 1 && currCol > 0) {
-            addNodeToQueue(currRow + 1, currCol - 1, pqueue, currNodePtr, true);
-        }
-
-        Node nextNode = pqueue.top();
-        pqueue.pop();
-
-        while (seenNodes.find(nextNode) != seenNodes.end()) {
-            nextNode = pqueue.top();
-            pqueue.pop();
-            auto endTime = std::chrono::high_resolution_clock::now();
-            auto duration = std::chrono::duration<double>(endTime - startTime);
-            qDebug() << "duration is " << duration.count();
-            if (duration.count() > 10) {
-                return {};
+        // adds all the neighbors to the priority queue
+        for (pair<int, int> neighborInc : neighborIncVec) {
+            if (occGrid.isValidPosition(currRow + neighborInc.first, currCol + neighborInc.second)) {
+                addNodeToQueue(currRow + neighborInc.first, currCol + neighborInc.second, pqueue, currNode);
             }
         }
 
-        currNodePtr = new Node(nextNode.get_row(), nextNode.get_col(), nextNode.get_g(), nextNode.get_h());
-        currNodePtr->parent = nextNode.parent;
+        // Only look at the next node if it has not been seen
+        while (seenNodes.find({pqueue.top().getRow(), pqueue.top().getCol()}) != seenNodes.end()) {
+            pqueue.pop();
+        }
+
+        currNode = new Node(pqueue.top());
     }
 
-    vector<int> finalRows;
-    vector<int> finalCols;
+    // iterate backwards from the end to get the actual path
+    vector<Point> pts;
+    pts.push_back(Point(currNode->getRow(), currNode->getCol()));
 
-    finalRows.push_back(currNodePtr->get_row());
-    finalCols.push_back(currNodePtr->get_col());
-
-    while (*currNodePtr != start) {
-        currNodePtr = currNodePtr->get_parent();
-        finalRows.push_back(currNodePtr->get_row());
-        finalCols.push_back(currNodePtr->get_col());
+    while (*currNode != start) {
+        currNode = currNode->getParent(); // when it is an r-value, de-reference with a *
+        pts.push_back(Point(currNode->getRow(), currNode->getCol()));
     }
 
-    return {finalRows, finalCols};
+    return pts;
 }
