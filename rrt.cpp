@@ -17,30 +17,28 @@ pair<int, int> RRT::getRandomCoordinates() {
     return pair<int, int>(rand()%occSize, rand()%occSize);
 }
 
-float dist(Node node, int row, int col) {
+double dist(Node node, int row, int col) {
     return sqrt(pow(node.getRow() - row, 2) + pow(node.getCol() - col, 2));
 }
 
-float dist(Node* node, int row, int col) {
+double dist(Node* node, int row, int col) {
     return sqrt(pow(node->getRow() - row, 2) + pow(node->getCol() - col, 2));
 }
 
 Node* RRT::findClosestNode(int randRow, int randCol) {
-    float min_dist = numeric_limits<float>::max();
+    double minDist = numeric_limits<double>::max();
     Node* closestNode;
     for (Node* node:nodes) {
-        float curr_dist = dist(node, randRow, randCol);
-        if (curr_dist < min_dist) {
+        double curr_dist = dist(node, randRow, randCol);
+        if (curr_dist < minDist) {
             closestNode = node;
-            min_dist = curr_dist;
+            minDist = curr_dist;
         }
     }
     return closestNode;
 }
 
 void RRT::addIntermediateNodes(vector<Point> &nodes, Node* childNode, Node* parentNode) {
-
-
 
     // Horizontal
     if (parentNode->getRow() == childNode->getRow()) {
