@@ -84,7 +84,7 @@ vector<Point> Dijkstra::findPath() {
     pts.push_back(Point(currNode->getRow(), currNode->getCol()));
 
     while (*currNode != start) {
-        currNode = currNode->getParent(); // when it is an r-value, de-reference with a *
+        currNode = currNode->getParent();
         pts.push_back(Point(currNode->getRow(), currNode->getCol()));
     }
 
