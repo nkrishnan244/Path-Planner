@@ -9,7 +9,6 @@
 RRT::RRT(Node startNode, Node endNode, OccupancyGrid &occ)
 : Planner(startNode, endNode, occ)
 {
-
 }
 
 pair<int, int> RRT::getRandomCoordinates() {
@@ -38,108 +37,57 @@ Node* RRT::findClosestNode(int randRow, int randCol) {
     return closestNode;
 }
 
+pair<int, int> getIncrements(Node* startNode, Node* endNode) {
+    int rowIncrement = 0;
+    int colIncrement = 0;
+
+    if (startNode->getRow() > endNode->getRow()) {
+        rowIncrement = -1;
+    }
+    else if (startNode->getRow() < endNode->getRow()) {
+        rowIncrement = 1;
+    }
+
+    if (startNode->getCol() > endNode->getCol()) {
+        colIncrement = -1;
+    }
+
+    else if (startNode->getCol() < endNode->getCol()) {
+        colIncrement = 1;
+    }
+
+    return pair<int, int>(rowIncrement, colIncrement);
+}
+
 void RRT::addIntermediateNodes(vector<Point> &nodes, Node* childNode, Node* parentNode) {
 
-    // Horizontal
-    if (parentNode->getRow() == childNode->getRow()) {
+    int rowIncrement, colIncrement;
+    tie(rowIncrement, colIncrement) = getIncrements(childNode, parentNode);
 
-        // right
-        if (parentNode->getCol() > childNode->getCol()) {
-            for (int col = childNode->getCol(); col <= parentNode->getCol(); col++) {
-                nodes.push_back(Point(parentNode->getRow(), col));
-            }
+    int col = childNode->getCol();
+    int row = childNode->getRow();
 
-        }
-
-        // left
-        else if (parentNode->getCol() < childNode->getCol()) {
-            for (int col = childNode->getCol(); col >= parentNode->getCol(); col--) {
-                nodes.push_back(Point(parentNode->getRow(), col));
-            }
-        }
+    while (col != parentNode->getCol()+colIncrement || row != parentNode->getRow()+rowIncrement) {
+        nodes.push_back(Point(row, col)); // look into making this funciton call modular
+        col += colIncrement;
+        row += rowIncrement;
     }
-
-    // Vertical
-    else if (parentNode->getCol() == childNode->getCol()) {
-
-        // down
-        if (parentNode->getRow() > childNode->getRow()) {
-            for (int row = childNode->getRow(); row <= parentNode->getRow(); row++) {
-                nodes.push_back(Point(row, parentNode->getCol()));
-            }
-
-        }
-
-        // right
-        else if (parentNode->getRow() < childNode->getRow()) {
-            for (int row = childNode->getRow(); row >= parentNode->getRow(); row--) {
-                nodes.push_back(Point(row, parentNode->getCol()));
-            }
-
-        }
-    }
-
-    // diagnal
-    else {
-
-        int col = childNode->getCol();
-
-        // down
-        if (parentNode->getRow() > childNode->getRow()) {
-
-            // right
-            if (parentNode->getCol() > childNode->getCol()) {
-                for (int row = childNode->getRow(); row <= parentNode->getRow(); row++) {
-                        nodes.push_back(Point(row, col));
-                        col++;
-                }
-            }
-
-            // left
-            else if (parentNode->getCol() < childNode->getCol()) {
-                for (int row = childNode->getRow(); row <= parentNode->getRow(); row++) {
-                        nodes.push_back(Point(row, col));
-                        col--;
-                }
-            }
-        }
-
-        // up
-        else if (parentNode->getRow() < childNode->getRow()) {
-
-            // right
-            if (parentNode->getCol() > childNode->getCol()) {
-                for (int row = childNode->getRow(); row >= parentNode->getRow(); row--) {
-                        nodes.push_back(Point(row, col));
-                        col++;
-                }
-            }
-
-            // left
-            else if (parentNode->getCol() < childNode->getCol()) {
-                for (int row = childNode->getRow(); row >= parentNode->getRow(); row--) {
-                        nodes.push_back(Point(row, col));
-                        col--;
-                }
-
-            }
-
-        }
-
-    }
-
 }
 
 bool RRT::checkObstacle(Node* startNode, Node* endNode) {
-    int min_row = min(startNode->getRow(), endNode->getRow());
-    int max_row = max(startNode->getRow(), endNode->getRow());
-    int min_col = min(startNode->getCol(), endNode->getCol());
-    int max_col = max(startNode->getCol(), endNode->getCol());
-    for (int row = min_row; row <= max_row; row++) {
-        for (int col = min_col; col <= max_col; col++) {
-            if (occGrid.grid[row][col] == 1)
-                return true;
+    int rowIncrement = 0;
+    int colIncrement = 0;
+    tie(rowIncrement, colIncrement) = getIncrements(startNode, endNode);
+
+    int row = startNode->getRow();
+    int col = startNode->getCol();
+
+    while (row != endNode->getRow() + rowIncrement || col != endNode->getCol() + colIncrement) {
+        if (occGrid.grid[row][col] == 1) {
+            return true;
         }
+        row += rowIncrement;
+        col += colIncrement;
     }
     return false;
 }
@@ -149,9 +97,8 @@ vector<Point> RRT::findPath() {
     Node* closestNode;
     nodes.push_back(currNode);
 
-    int rrtDist = 2;
+    int rrtDist = 7;
     int margin = 0;
-    float minDist;
 
     srand(time(NULL));
 
@@ -168,56 +115,44 @@ vector<Point> RRT::findPath() {
             int rowDirection = randRow - closestNode->getRow();
             int colDirection = randCol - closestNode->getCol();
 
-            // Make sure that this a new point
-            if (rowDirection == 0 && colDirection == 0) continue;
+            int rrtDistRow = 0;
+            int rrtDistCol = 0;
 
-            // horizontal dist < vertical dist
             if (abs(rowDirection) > abs(colDirection)) {
                 if (rowDirection < 0) {
-                    newNode->setRow(closestNode->getRow() - rrtDist);
+                    rrtDistRow = -1;
                 } else {
-                    newNode->setRow(closestNode->getRow() + rrtDist);
+                    rrtDistRow = 1;
                 }
-                newNode->setCol(closestNode->getCol());
             }
 
-            // horizontal dist > vertical dist
-            else if (abs(colDirection) > abs(rowDirection)) {
+            else if (abs(rowDirection) < abs(colDirection)) {
                 if (colDirection < 0) {
-                    newNode->setCol(closestNode->getCol() - rrtDist);
+                    rrtDistCol = -1;
                 } else {
-                    newNode->setCol(closestNode->getCol() + rrtDist);
+                    rrtDistCol = 1;
                 }
-                newNode->setRow(closestNode->getRow());
             }
 
-            // horizontal dist == vertical dist (need to fix this)
             else {
-
-                // bottom right
-                if (rowDirection > 0 && colDirection > 0) {
-                    newNode->setRow(closestNode->getRow() + rrtDist);
-                    newNode->setCol(closestNode->getCol() + rrtDist);
+                if (rowDirection < 0) {
+                    rrtDistRow = -1;
+                } else {
+                    rrtDistRow = 1;
                 }
 
-                // top left
-                else if (rowDirection < 0 && colDirection < 0) {
-                    newNode->setRow(closestNode->getRow() - rrtDist);
-                    newNode->setCol(closestNode->getCol() - rrtDist);
-                }
-
-                // bottom left
-                else if (rowDirection > 0 && colDirection < 0) {
-                    newNode->setRow(closestNode->getRow() + rrtDist);
-                    newNode->setCol(closestNode->getCol() - rrtDist);
-                }
-
-                // top right
-                else if (rowDirection < 0 && colDirection > 0) {
-                    newNode->setRow(closestNode->getRow() - rrtDist);
-                    newNode->setCol(closestNode->getCol() + rrtDist);
+                if (colDirection < 0) {
+                    rrtDistCol = -1;
+                } else {
+                    rrtDistCol = 1;
                 }
             }
+
+            newNode->setRow(closestNode->getRow() + rrtDistRow*rrtDist);
+            newNode->setCol(closestNode->getCol() + rrtDistCol*rrtDist);
+
+            // Make sure that this a new point
+            if (rowDirection == 0 && colDirection == 0) continue;
 
             // Make sure we are within the bounds of the occ grid
             if (newNode->getRow() >= occGrid.grid.size() || newNode->getCol() >= occGrid.grid.size())
@@ -228,21 +163,10 @@ vector<Point> RRT::findPath() {
             bool isObstacle = checkObstacle(closestNode, newNode);
 
             if (!isObstacle) {
-
-//                addIntermediateNodes(nodes, closestNode, newNode);
-
-
                 newNode->parent = closestNode;
                 currNode = newNode;
-                qDebug() << "ROW IS " << newNode->getRow();
-                qDebug() << "COL IS " << newNode->getCol();
                 nodes.push_back(newNode);
 
-
-
-//                addIntermediateNodes(nodes, closestNode, newNode);
-//                qDebug() << "new node col is " << newNode->getCol();
-//                qDebug() << "new node row is " << newNode->getRow();
             }
         }
     }
