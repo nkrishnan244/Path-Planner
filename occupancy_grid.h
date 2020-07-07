@@ -12,6 +12,9 @@ class OccupancyGrid {
         OccupancyGrid(int numRows, int numCols, int padding);
         bool addRectangleObs(int row, int col, int height, int width);
         bool addRectangleObsTopleft(int inputRow, int inputCol, int height, int width);
+        bool isWithinBounds(int row, int col);
+        bool isValidPosition(int row, int col);
+
 
         vector<vector<int>> grid;
         int numCols;

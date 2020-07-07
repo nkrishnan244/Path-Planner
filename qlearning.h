@@ -3,12 +3,13 @@
 
 #include <occupancy_grid.h>
 #include <node.h>
+#include <point.h>
+#include <planner.h>
 
-class QLearning
+class QLearning : public Planner
 {
 public:
     QLearning(Node start, Node end, OccupancyGrid occ);
-    OccupancyGrid occGrid;
     ~QLearning();
 
     void trainModel();
@@ -18,12 +19,14 @@ public:
     int rowColToIndex(int row, int col);
     bool withinBounds(int row, int col);
 
-    vector<vector<int>> findPath();
-
-    Node start;
-    Node end;
+    vector<Point> findPath();
 
     vector<vector<float>> table;
+
+    const double maxIterations = 100000;
+    const double maxSteps = 20000;
+    const double learningRate = 0.01;
+    const double discountFactor = 0.9;
 };
 
 #endif // QLEARNING_H

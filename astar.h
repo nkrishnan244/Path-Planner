@@ -4,6 +4,7 @@
 #include "dijkstra.h"
 #include <math.h>
 #include "plotter.h"
+#include "helper_functions.h"
 // #include "node.h"
 
 using namespace std;
@@ -14,7 +15,6 @@ class Astar : public Dijkstra {
         ~Astar();
 
         void setNodeValue(Node &newNode);
-        double calculateHeuristic(double row, double col);
         void addNodeToQueue(int row, int col, priority_queue<Node> &pq, Node* parentNodePtr);
 };
 

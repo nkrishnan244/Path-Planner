@@ -1,36 +1,33 @@
 #ifndef NODE_H
 #define NODE_H
 
-// #include "dijkstra.cpp"
+#include "point.h"
 
-class Node {
+class Node : public Point {
 
     public:
         Node();
-        Node(int row_, int col_, int g_val=0);
-        Node(int row_, int col_, int g_val, float h_val);
-        int get_row() const;
-        int get_col() const;
-        void set_col(int newCol);
-        void set_row(int newRow);
-        int get_g() const;
-        float get_h() const;
-        void set_h(float val);
-        bool operator==(const Node& rhs) const;
-        bool operator!=(const Node& rhs) const;
-        bool operator<(const Node& rhs) const;
-        Node* get_parent();
-        void set_parent(Node &parent_node);
-        Node* parent;
-        // bool operator<(const Node& rhs);
+        Node(int initRow, int initCol, double g_val=0.0);
+        Node(int initRow, int initCol, double initG, double initH);
 
-        float val;
+        double getG() const;
+        double getH() const;
+        Node* getParent();
+
+        bool setG(double val);
+        bool setH(double val);
+        bool setVal(double val);
+        void setParent(Node &parent_node);
+
+        bool operator<(const Node& rhs) const;
+
+        // Make these private at some point
+        Node* parent;
+        double val;
 
     private:
-        int row;
-        int col;
-        int g;
-        float h;
+        double g;
+        double h;
 };
 
 #endif

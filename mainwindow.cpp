@@ -13,6 +13,11 @@
 #include <iterator>
 #include "qlearning.h"
 #include "point.h"
+#include "QTimer"
+#include "QPainter"
+#include "QDebug"
+#include "qcustomplot.h"
+#include "dstar.h"
 
 // Right now, the size of the occupancy grid is fixed and can not be edited by the user
 static int OCC_ROWS = 60;
@@ -190,6 +195,10 @@ bool MainWindow::startPlanning(string plannerAlg, Point startPoint, vector<Point
         qDebug() << "Planning A*...";
         Astar planner(start, end, occ);
         pts = planner.findPath();
+    } else if (plannerAlg == "Dstar") {
+        qDebug() << "Planning D*...";
+        Dstar planner(start, end, occ);
+        pts = planner.findPath();
     } else if (plannerAlg == "RRT") {
         qDebug() << "Planning RRT...";
         RRT planner(start, end, occ);
@@ -248,6 +257,14 @@ void MainWindow::on_aStarButton_clicked()
     motionTimer->stop();
     startPlanning("Astar", Point(0, 0), {});
 }
+
+void MainWindow::on_dStarButton_clicked()
+{
+    stage = "Planning";
+    motionTimer->stop();
+    startPlanning("Dstar", Point(0, 0), {});
+}
+
 
 void MainWindow::on_rrtButton_clicked()
 {
@@ -351,6 +368,7 @@ void MainWindow::incrementPoint() {
         if (occ.grid.at(initPoint.getRow()).at(initPoint.getCol()) == 1) {
             qDebug() << "current point is covered, can't solve!";
             motionTimer->stop();
+            lastPoint = 0;
             return;
         }
 

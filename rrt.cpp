@@ -16,14 +16,6 @@ pair<int, int> RRT::getRandomCoordinates() {
     return pair<int, int>(rand()%occSize, rand()%occSize);
 }
 
-double dist(Node node, int row, int col) {
-    return sqrt(pow(node.getRow() - row, 2) + pow(node.getCol() - col, 2));
-}
-
-double dist(Node* node, int row, int col) {
-    return sqrt(pow(node->getRow() - row, 2) + pow(node->getCol() - col, 2));
-}
-
 Node* RRT::findClosestNode(int randRow, int randCol) {
     double minDist = numeric_limits<double>::max();
     Node* closestNode;
@@ -38,56 +30,43 @@ Node* RRT::findClosestNode(int randRow, int randCol) {
 }
 
 pair<int, int> getIncrements(Node* startNode, Node* endNode) {
-    int rowIncrement = 0;
-    int colIncrement = 0;
 
-    if (startNode->getRow() > endNode->getRow()) {
-        rowIncrement = -1;
-    }
-    else if (startNode->getRow() < endNode->getRow()) {
-        rowIncrement = 1;
-    }
-
-    if (startNode->getCol() > endNode->getCol()) {
-        colIncrement = -1;
-    }
-
-    else if (startNode->getCol() < endNode->getCol()) {
-        colIncrement = 1;
-    }
+    // This outputs 1 if input 1 < input 2, -1 if input 1 > input 2, and 0 if input 1 == input 2
+    // This allows us to figure out what row, col direction we are going in to get from startNode to endNode
+    int rowIncrement = boolToDirectionLessThan(startNode->getRow(), endNode->getRow(), 1, -1, 0);
+    int colIncrement = boolToDirectionLessThan(startNode->getCol(), endNode->getCol(), 1, -1, 0);
 
     return pair<int, int>(rowIncrement, colIncrement);
 }
 
-void RRT::addIntermediateNodes(vector<Point> &nodes, Node* childNode, Node* parentNode) {
-
+// Basically do something while going from start node (row, col) to end node (row, col)
+// The function inputted in is operated on the row and columns while iterating
+bool RRT::incrementFromStartToEndNode(bool (RRT::*function)(int, int, vector<Point>&), Node* startNode, Node* endNode, vector<Point> &nodes) {
     int rowIncrement, colIncrement;
-    tie(rowIncrement, colIncrement) = getIncrements(childNode, parentNode);
+    tie(rowIncrement, colIncrement) = getIncrements(startNode, endNode);
 
-    int col = childNode->getCol();
-    int row = childNode->getRow();
+    int col = startNode->getCol();
+    int row = startNode->getRow();
 
-    while (col != parentNode->getCol()+colIncrement || row != parentNode->getRow()+rowIncrement) {
-        nodes.push_back(Point(row, col)); // look into making this funciton call modular
+    while (col != endNode->getCol()+colIncrement || row != endNode->getRow()+rowIncrement) {
+        if ((this->*function)(row, col, nodes) == true) {
+            return true;
+        }
         col += colIncrement;
         row += rowIncrement;
     }
+
+    return false;
 }
 
-bool RRT::checkObstacle(Node* startNode, Node* endNode) {
-    int rowIncrement = 0;
-    int colIncrement = 0;
-    tie(rowIncrement, colIncrement) = getIncrements(startNode, endNode);
+bool RRT::addNode(int row, int col, vector<Point> &nodes) {
+    nodes.push_back(Point(row, col));
+    return false;
+}
 
-    int row = startNode->getRow();
-    int col = startNode->getCol();
-
-    while (row != endNode->getRow() + rowIncrement || col != endNode->getCol() + colIncrement) {
-        if (occGrid.grid[row][col] == 1) {
-            return true;
-        }
-        row += rowIncrement;
-        col += colIncrement;
+bool RRT::checkObstacleFunc(int row, int col, vector<Point> &nodes) {
+    if (occGrid.grid[row][col] == 1) {
+        return true;
     }
     return false;
 }
@@ -97,10 +76,10 @@ vector<Point> RRT::findPath() {
     Node* closestNode;
     nodes.push_back(currNode);
 
-    int rrtDist = 7;
+    int rrtDist = 2;
     int margin = 0;
 
-    srand(time(NULL));
+    srand(time(NULL)); // randomly seed random
 
     while (dist(end, currNode->getRow(), currNode->getCol()) > rrtDist + margin) {
 
@@ -111,84 +90,48 @@ vector<Point> RRT::findPath() {
         if (occGrid.grid[randRow][randCol] == 0) {
             Node* closestNode = findClosestNode(randRow, randCol);
 
-            Node* newNode = new Node(0, 0);
             int rowDirection = randRow - closestNode->getRow();
             int colDirection = randCol - closestNode->getCol();
 
-            int rrtDistRow = 0;
-            int rrtDistCol = 0;
+            int rrtDistRow = boolToDirection(rowDirection > 0);
+            int rrtDistCol = boolToDirection(colDirection > 0);
 
             if (abs(rowDirection) > abs(colDirection)) {
-                if (rowDirection < 0) {
-                    rrtDistRow = -1;
-                } else {
-                    rrtDistRow = 1;
-                }
+                rrtDistCol = 0;
             }
-
             else if (abs(rowDirection) < abs(colDirection)) {
-                if (colDirection < 0) {
-                    rrtDistCol = -1;
-                } else {
-                    rrtDistCol = 1;
-                }
+                rrtDistRow = 0;
             }
 
-            else {
-                if (rowDirection < 0) {
-                    rrtDistRow = -1;
-                } else {
-                    rrtDistRow = 1;
-                }
-
-                if (colDirection < 0) {
-                    rrtDistCol = -1;
-                } else {
-                    rrtDistCol = 1;
-                }
-            }
-
-            newNode->setRow(closestNode->getRow() + rrtDistRow*rrtDist);
-            newNode->setCol(closestNode->getCol() + rrtDistCol*rrtDist);
+            Node* newNode = new Node(closestNode->getRow() + rrtDistRow*rrtDist, closestNode->getCol() + rrtDistCol*rrtDist);
 
             // Make sure that this a new point
             if (rowDirection == 0 && colDirection == 0) continue;
 
             // Make sure we are within the bounds of the occ grid
-            if (newNode->getRow() >= occGrid.grid.size() || newNode->getCol() >= occGrid.grid.size())
+            if (!occGrid.isWithinBounds(newNode->getRow(), newNode->getCol())) {
                 continue;
-            if (newNode->getRow() < 0 || newNode->getCol() < 0)
-                continue;
+            }
 
-            bool isObstacle = checkObstacle(closestNode, newNode);
+            vector<Point> getRidOfThis;
+            bool isObstacle = incrementFromStartToEndNode(&RRT::checkObstacleFunc, closestNode, newNode, getRidOfThis);
 
             if (!isObstacle) {
                 newNode->parent = closestNode;
                 currNode = newNode;
                 nodes.push_back(newNode);
-
             }
         }
     }
 
-    qDebug() << "FINISHED PLANNING";
-
     vector<Point> pts;
 
-//    pts.push_back(Point(end.getRow(), end.getCol()));
-
-    addIntermediateNodes(pts, &end, currNode);
+    incrementFromStartToEndNode(&RRT::addNode, &end, currNode, pts);
 
     while (*currNode != start) {
-//        pts.push_back(Point(currNode->getRow(), currNode->getCol()));
-        addIntermediateNodes(pts, currNode, currNode->getParent());
+        incrementFromStartToEndNode(&RRT::addNode, currNode, currNode->getParent(), pts);
         currNode = currNode->getParent();
-//        currNode = *currNode_ptr;
     }
 
-//    pts.push_back(Point(currNode->getRow(), currNode->getCol()));
-
-//    qDebug() << "curr node row is " << currNode->getRow();
-//    qDebug() << "curr node col is " << currNode->getCol();
     return pts;
 }

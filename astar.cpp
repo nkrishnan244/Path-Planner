@@ -1,5 +1,6 @@
 #include "astar.h"
 #include <QDebug>
+//#include "helper_functions.cpp"
 
 using namespace std;
 
@@ -12,11 +13,7 @@ Astar::~Astar()
 {
 }
 
-double Astar::calculateHeuristic(double row, double col) {
-    return sqrt(pow(row - end.getRow(), 2) + pow(col - end.getCol(), 2));
-}
-
 void Astar::setNodeValue(Node &newNode) {
-    double h = calculateHeuristic(newNode.getRow(), newNode.getCol());
+    double h = dist(end, newNode.getRow(), newNode.getCol());
     newNode.setVal(newNode.getG() + h);
 }

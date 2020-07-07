@@ -13,7 +13,7 @@ QLearning::~QLearning()
 
 
 float dist(Node start, Node end) {
-    return sqrt(pow(start.get_row() - end.get_row(), 2) + pow(start.get_col() - end.get_col(), 2));
+    return sqrt(pow(start.getRow() - end.getRow(), 2) + pow(start.getCol() - end.getCol(), 2));
 }
 
 void QLearning::getActionSpace(vector<vector<float>>& actionSpace, vector<float> qValues, bool includeAll) {
@@ -50,23 +50,16 @@ void QLearning::trainModel() {
 
     srand(time( NULL ));
 
-    double learningRate = 0.01;
-    double discountFactor = 0.9;
-
     for (int i = 0; i < 60*60; i++) {
         vector<float> vect({0, 0, 0, 0});
         qTable.push_back(vect); // states are start, end, other
     }
 
-    int numIterations = 10000;
     int numSteps = 0;
     int reward = 0;
     int occSize = occGrid.size;
 
     int runningNums = 0;
-
-    int maxSteps = 2000000;
-
     bool exploring;
 
     int newState;
@@ -74,7 +67,7 @@ void QLearning::trainModel() {
 
     float newDist = 0;
 
-    Node currNode(start.get_row(), start.get_col(), 0);
+    Node currNode(start.getRow(), start.getCol(), 0);
 
     vector<vector<float>> actionSpace; // get action space
 //    getActionSpace(actionSpace);
@@ -88,7 +81,7 @@ void QLearning::trainModel() {
 
     bool converged = false;
 
-    for (int i = 0; i < numIterations; i++) {
+    for (int i = 0; i < maxIterations; i++) {
 
         if (converged == true) {
             qDebug() << "Alg has converged";
@@ -99,34 +92,19 @@ void QLearning::trainModel() {
 
         numSteps = 0;
 
-        currNode.set_row(start.get_row()); // reset the state
-        currNode.set_col(start.get_col());
+        currNode.setRow(start.getRow()); // reset the state
+        currNode.setCol(start.getCol());
 
         reward = 0;
 
         exploring = true;
 
-//        qDebug() << "EARLYYYY NEW STATE IS " << newState;
-
-        newState = rowColToIndex(currNode.get_row(), currNode.get_col()); // current state
-
-//        qDebug() << "EARLY NEW STATE IS " << newState;
+        newState = rowColToIndex(currNode.getRow(), currNode.getCol()); // current state
 
         action = {};
 
-//        qDebug() << "RE INITIALIZE ACTION";
-
         bool bestCourse = (rand()%2  > 0); // half the time take the best possible course, other half take a random course
 
-        if (bestCourse) {
-            maxSteps = 20000;
-        } else {
-            maxSteps = 20000;
-        }
-
-//        qDebug() << "BEST COURSE IS " << bestCourse;
-
-//        qDebug() << "RE INITIALIZE bestCourse";
         while (exploring == true) {
 
             actionSpace = {};
@@ -138,12 +116,7 @@ void QLearning::trainModel() {
                 continue;
             }
 
-//            qDebug() << "PRE STATE = NEWSTATE";
-
             state = newState;
-
-//            qDebug() << "POST STATE = NEWSTATE";
-//            qDebug() << "State is " << state;
 
             relevantQVals = qTable[state];
 
@@ -151,22 +124,14 @@ void QLearning::trainModel() {
 
             if (bestCourse) {
 
-//                qDebug() << "BESTCOURSE";
-
                 getActionSpace(actionSpace, qTable[state], true);
 
                 actionIndex = max_element(qTable[state].begin(), qTable[state].end()) - qTable[state].begin();
-//                if (actionIndex == 4) {
-//                    qDebug();
-//                }
-//                qDebug() << "action index is " << actionIndex;
-//                qDebug() << "len of actionSpace is " << actionSpace.size();
+
 
                 action = actionSpace[actionIndex];
 
             } else {
-
-//                qDebug() << "!BESTCOURSE";
 
                 getActionSpace(actionSpace, qTable[state], false);
 
@@ -178,8 +143,6 @@ void QLearning::trainModel() {
                 actionIndex = rand()%actionSpace.size();
                 action = actionSpace[actionIndex];
             }
-
-//            qDebug() << "POST BESTCOURSE LOGIC";
 
             int realIndex;
 
@@ -198,35 +161,26 @@ void QLearning::trainModel() {
                 realIndex = 3;
             }
 
-//            qDebug() << "Real Index is " << realIndex;
-
-//            vector<float> action = actionSpace[actionIndex]; // randomly pick an action
-
-            int prevRow = currNode.get_row();
-            int prevCol = currNode.get_col();
+            int prevRow = currNode.getRow();
+            int prevCol = currNode.getCol();
 
             int newRow = prevRow + action[0];
             int newCol = prevCol + action[1];
 
-            currNode.set_row(newRow);
-            currNode.set_col(newCol);
+            currNode.setRow(newRow);
+            currNode.setCol(newCol);
 
             newDist = dist(currNode, end);
 
             newState = rowColToIndex(newRow, newCol);
-
-//            qDebug() << "WE ARE WITHIN " << (withinBounds(newRow, newCol));
-//            qDebug() << "Prev row is " << prevRow;
-//            qDebug() << "Prev col is " << prevCol;
 
             if (!withinBounds(newRow, newCol)) {
                 qTable[state][realIndex] = -1000;
                 exploring = false;
             }
 
-            else if (newRow == end.get_row() && newCol == end.get_col()) {
+            else if (newRow == end.getRow() && newCol == end.getCol()) {
                 reward = 1000;
-//                qDebug() << "A";
                 float qMax = *max_element(qTable[newState].begin(), qTable[newState].end());
                 float qTableVal = (1 - learningRate)*qTable[state][realIndex] + learningRate*(reward + discountFactor*qMax);
                 qTable[state][realIndex] = qTableVal;
@@ -235,7 +189,6 @@ void QLearning::trainModel() {
 
             else if (occGrid.grid[newRow][newCol] == 1) {
                 reward = -1000;
-//                qDebug() << "B";
                 float qMax = *max_element(qTable[newState].begin(), qTable[newState].end());
                 qTable[state][realIndex] = (1 - learningRate)*qTable[state][realIndex] + learningRate*(reward + discountFactor*qMax);
                 exploring = false;
@@ -243,7 +196,6 @@ void QLearning::trainModel() {
 
             else if (newDist < currDist) {
                 reward = 1;
-//                qDebug() << "C";
                 float qMax = *max_element(qTable[newState].begin(), qTable[newState].end());
                 float qTableVal = (1 - learningRate)*qTable[state][realIndex] + learningRate*(reward + discountFactor*qMax);
                 qTable[state][realIndex] = qTableVal;
@@ -252,14 +204,12 @@ void QLearning::trainModel() {
 
             else if (newDist > currDist) {
                 reward = 0;
-//                qDebug() << "D";
                 float qMax = *max_element(qTable[newState].begin(), qTable[newState].end());
                 qTable[state][realIndex] = (1 - learningRate)*qTable[state][realIndex] + learningRate*(reward + discountFactor*qMax);
             }
 
             else {
                 reward = 0;
-//                qDebug() << "E";
                 float qMax = *max_element(qTable[newState].begin(), qTable[newState].end());
                 qTable[state][realIndex] = (1 - learningRate)*qTable[state][realIndex] + learningRate*(reward + discountFactor*qMax);
             }
@@ -293,9 +243,9 @@ void QLearning::trainModel() {
     table = qTable;
 }
 
-vector<vector<int>> QLearning::findPath() {
-    int currRow = start.get_row();
-    int currCol = start.get_col();
+vector<Point> QLearning::findPath() {
+    int currRow = start.getRow();
+    int currCol = start.getCol();
 
     int currState = 0;
 
@@ -304,12 +254,14 @@ vector<vector<int>> QLearning::findPath() {
 
     int numIters = 0;
 
+    vector<Point> pts;
+
     vector<int> rows;
     vector<int> cols;
 
     auto startTime = std::chrono::high_resolution_clock::now();
 
-    while ((abs(currRow - end.get_row()) >= 1) || (abs(currCol - end.get_col()) >= 1)) {
+    while ((abs(currRow - end.getRow()) >= 1) || (abs(currCol - end.getCol()) >= 1)) {
 
         auto endTime = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration<double>(endTime - startTime);
@@ -318,6 +270,8 @@ vector<vector<int>> QLearning::findPath() {
         }
 
         currState = rowColToIndex(currRow, currCol);
+
+        pts.push_back(Point(currRow, currCol));
 
         rows.push_back(currRow);
         cols.push_back(currCol);
@@ -344,15 +298,19 @@ vector<vector<int>> QLearning::findPath() {
         }
     }
 
-    rows.push_back(end.get_row());
-    cols.push_back(end.get_col());
+    rows.push_back(end.getRow());
+    cols.push_back(end.getCol());
+
+    pts.push_back(Point(end.getRow(), end.getCol()));
+
+    reverse(pts.begin(), pts.end());
 
     reverse(rows.begin(), rows.end());
     reverse(cols.begin(), cols.end());
 
     vector<vector<int>> thisPath = {rows, cols};
 
-    return thisPath;
+    return pts;
 
 }
 

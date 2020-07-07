@@ -7,6 +7,28 @@ OccupancyGrid::OccupancyGrid() {
 
 }
 
+bool OccupancyGrid::isWithinBounds(int row, int col) {
+    // Make sure that the new (row, column) is within the occupancy grid
+    if ((row < 0) || (row >= grid.size()) || (col < 0) || (col >= grid.size())) {
+        return false;
+    }
+    return true;
+}
+
+bool OccupancyGrid::isValidPosition(int row, int col) {
+    // Make sure that the new (row, column) is within the occupancy grid
+    if (!isWithinBounds(row, col)) {
+        return false;
+    }
+
+    if (grid.at(row).at(col) == 1) {
+        return false;
+    }
+
+    return true;
+}
+
+
 OccupancyGrid::OccupancyGrid(int numRows, int numCols, int padding) {
     vector<int> occRow(numCols, 0);
     for (int col = 0; col < numCols; col++) {
@@ -27,8 +49,8 @@ bool OccupancyGrid::addRectangleObs(int row, int col, int height, int width) {
 }
 
 bool OccupancyGrid::addRectangleObsTopleft(int inputRow, int inputCol, int height, int width) {
-    for (int col = inputCol; col <= inputCol + width; col++) {
-        for (int row = inputRow; row <= inputRow + height; row++) {
+    for (int col = inputCol; col < inputCol + width; col++) {
+        for (int row = inputRow; row < inputRow + height; row++) {
             grid.at(row).at(col) = 1;
         }
     }

@@ -2,63 +2,47 @@
 
 Node::Node()
 {
-
 }
 
-Node::Node(int row_, int col_, int g_)
-: row(row_), col(col_), g(g_)
+Node::Node(int initRow, int initCol, double initG)
+    : Point(initRow, initCol), g(initG)
 {
 }
 
-Node::Node(int row_, int col_, int g_, float h_)
-: row(row_), col(col_), g(g_), h(h_)
+Node::Node(int initRow, int initCol, double initG, double initH)
+    : Point(initRow, initCol), g(initG), h(initH)
 {
 }
 
-int Node::get_row() const {
-    return row;
-}
-
-int Node::get_col() const {
-    return col;
-}
-
-void Node::set_row(int newRow) {
-    row = newRow;
-}
-
-void Node::set_col(int newCol) {
-    col = newCol;
-}
-
-int Node::get_g() const {
+double Node::getG() const {
     return g;
 }
 
-float Node::get_h() const {
+double Node::getH() const {
     return h;
 }
 
-void Node::set_h(float val) {
-    h = val;
+bool Node::setG(double val) {
+    g = val;
+    return true;
 }
 
-Node* Node::get_parent() {
+bool Node::setH(double val) {
+    h = val;
+    return true;
+}
+
+bool Node::setVal(double inputVal) {
+    val = inputVal;
+    return true;
+}
+
+Node* Node::getParent() {
     return parent;
 }
 
-void Node::set_parent(Node &parentNode) {
+void Node::setParent(Node &parentNode) {
     this->parent = &parentNode;
-}
-
-bool Node::operator==(const Node& rhs) const
-{
-    return (this->get_row() == rhs.get_row()) && (this->get_col() == rhs.get_col());
-}
-
-bool Node::operator!=(const Node& rhs) const
-{
-    return !(*this == rhs);
 }
 
 bool Node::operator<(const Node& rhs) const

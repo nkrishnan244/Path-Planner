@@ -84,6 +84,8 @@ private slots:
 
     void on_qLearningButton_clicked();
 
+    void on_dStarButton_clicked();
+
 private:
     Ui::MainWindow *ui;
     QVector<double> x, y;

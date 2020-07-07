@@ -3,6 +3,7 @@ QT       += core gui printsupport
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG += c++11
+#CONFIG += console
 
 # The following define makes your compiler emit warnings if you use
 # any Qt feature that has been marked deprecated (the exact warnings
@@ -18,6 +19,8 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
     astar.cpp \
     dijkstra.cpp \
+    dstar.cpp \
+    helper_functions.cpp \
     main.cpp \
     mainwindow.cpp \
     node.cpp \
@@ -25,14 +28,17 @@ SOURCES += \
     planner.cpp \
 #    plotgrid.cpp \
 #    probabilisticroadmap.cpp \
+    point.cpp \
     qcustomplot.cpp \
 #    rrt.cpp
  \#    plotter.cpp
+    qlearning.cpp \
     rrt.cpp
 
 HEADERS += \
     astar.h \
     dijkstra.h \
+    dstar.h \
     mainwindow.h \
     matplotlibcpp.h \
     node.h \
@@ -40,9 +46,11 @@ HEADERS += \
     planner.h \
 #    plotgrid.h \
 #    probabilisticroadmap.h \
+    point.h \
     qcustomplot.h \
 #    rrt.h
  \#    plotter.h
+    qlearning.h \
     rrt.h
 
 #INCLUDEPATH += \

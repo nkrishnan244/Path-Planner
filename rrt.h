@@ -5,7 +5,9 @@
 #include "node.h"
 #include "occupancy_grid.h"
 #include <vector>
-
+#include <stdlib.h>
+#include "helper_functions.h"
+#include <functional>
 
 class RRT : public Planner
 {
@@ -16,7 +18,14 @@ class RRT : public Planner
         pair<int, int> getRandomCoordinates();
         Node* findClosestNode(int randRow, int randCol);
         bool checkObstacle(Node* startNode, Node* finalNode);
-        void addIntermediateNodes(vector<Point> &nodes, Node* closestNode, Node* currNode);
+        bool addIntermediateNodes(vector<Point> &nodes, Node* closestNode, Node* currNode);
+
+        bool checkObstacleFunc(int row, int col, vector<Point> &nodes);
+
+        bool incrementFromStartToEndNode(bool (RRT::*function)(int, int, vector<Point>&), Node* startNode, Node* endNode, vector<Point> &nodes);
+//        bool incrementFromStarttoEndNode(std::function<bool&(int, int, vector<Point>)> funct, Node* startNode, Node* endNode, vector<Point> &nodes);
+
+        bool addNode(int row, int col, vector<Point> &nodes);
 
 //        int rrt_dist;
 
